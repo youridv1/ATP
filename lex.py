@@ -78,5 +78,5 @@ def lex(filename: str):
     # filter out comments
     lines = map(lambda x: x.split("//", 1)[0], lines)
     # generate token list
-    tokens = filter(None, map(lambda x: list(map(lambda y: genToken(y), x)), map(lambda x: restoreSplitStrings(x), map(lambda x: x.split(), lines))))
+    tokens = list(filter(None, map(lambda x: list(map(lambda y: genToken(y), x)), map(lambda x: restoreSplitStrings(x), map(lambda x: x.split(), lines)))))
     return tokens
