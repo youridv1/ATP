@@ -1,9 +1,12 @@
 import lex as l
+import AST as a
+import interpreter as i
 
 def main():
     tokens = l.lex("helloworld.yo")
-    for token in tokens:
-        print(token)
+    ast = a.parse(tokens)
+    i.interpret(ast)
+    
         
 if __name__ == "__main__":
     main()

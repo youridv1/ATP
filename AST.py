@@ -20,9 +20,11 @@ def parseLine(tokensLine: list, variables: list):
             if len(tokensLine) == 3:
                 if tokensLine[1].type == "Identifier":
                     if tokensLine[2].type == "Number":
-                        return Expression("stel", len(tokensLine[1:],[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))])), variables
+                        variables.append(tokensLine[1].text)
+                        return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))]), variables
                     elif tokensLine[2].type == "String":
-                        return Expression("stel", len(tokensLine[1:],[Variable(tokensLine[1].text), Value(tokensLine[2].text)])), variables
+                        variables.append(tokensLine[1].text)
+                        return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(tokensLine[2].text)]), variables
                     else:
                         print("Expected a Number or a String, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
                         return 1
@@ -32,15 +34,15 @@ def parseLine(tokensLine: list, variables: list):
             else:
                 print("Stel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
                 return 1   
-        if tokensLine[0].text == "stapel":
+        if tokensLine[0].text in ["stapel", "verklein"]:
             if len(tokensLine) == 3:
                 if tokensLine[1].type == "Identifier":
                     if tokensLine[1].text in variables:
                         if tokensLine[2].type == "Number":
-                            return Expression("stapel", len(tokensLine[1:],[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))])), variables
+                            return Expression(tokensLine[0].text, len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))]), variables
                         elif tokensLine[2].type == "Identifier":
                             if tokensLine[1].text in variables:
-                                return Expression("stapel", len(tokensLine[1:],[Variable(tokensLine[1].text), Variable(tokensLine[2].text)])), variables
+                                return Expression(tokensLine[0].text, len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables
                             else:
                                 print("Unknown variable name: %s" % tokensLine[2].text)
                                 return 1
@@ -56,30 +58,6 @@ def parseLine(tokensLine: list, variables: list):
             else:
                 print("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
                 return 1 
-        if tokensLine[0].text == "verklein":
-            if len(tokensLine) == 3:
-                if tokensLine[1].type == "Identifier":
-                    if tokensLine[1].text in variables:
-                        if tokensLine[2].type == "Number":
-                            return Expression("verklein", len(tokensLine[1:],[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))])), variables
-                        elif tokensLine[2].type == "Identifier":
-                            if tokensLine[1].text in variables:
-                                return Expression("verklein", len(tokensLine[1:],[Variable(tokensLine[1].text), Variable(tokensLine[2].text)])), variables
-                            else:
-                                print("Unknown variable name: %s" % tokensLine[2].text)
-                                return 1
-                        else:
-                            print("Expected a Number or an Identifier, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
-                            return 1
-                    else:
-                        print("Unknown variable name: %s" % tokensLine[1].text)
-                        return 1
-                else:
-                    print("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
-                    return 1
-            else:
-                print("Verklein only takes 2 arguments. %s were given." % len(tokensLine[1:]))
-                return 1 
     #TO DO: 
     #Parse loops because fuck that
     if tokensLine[0].type == "Identifier":
@@ -94,9 +72,10 @@ def parse(tokens: list, variables = None):
         return 1
     if variables == None:
         variables = []
-    if len(tokens) == 1:
-        return parseLine(tokens[0], variables)
+    if len(tokens) < 2:
+        temp, _ = parseLine(tokens[0], variables)
+        return [temp]
     else:
-        temp, variables = parseLine(tokens[0], variables)
-        return [temp] + parse(tokens[1:], variables) 
+        temp, variables = parseLine(tokens[0], variables) 
+        return [temp] + parse(tokens[1:], variables)
 
