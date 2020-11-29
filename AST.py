@@ -27,14 +27,11 @@ def parseLine(tokensLine: list, variables: list):
                         variables.append(tokensLine[1].text)
                         return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(tokensLine[2].text)]), variables
                     else:
-                        print("Expected a Number or a String, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
-                        return 1
+                        raise Exception("Expected a Number or a String, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
                 else:
-                    print("Expected an Identifier, but got an %s, %s instead." % (tokensLine[0].type, tokensLine[0].text))
-                    return 1
+                    raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[0].type, tokensLine[0].text))
             else:
-                print("Stel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
-                return 1   
+                raise Exception("Stel only takes 2 arguments. %s were given." % len(tokensLine[1:]))   
         if tokensLine[0].text in ["stapel", "verklein"]:
             if len(tokensLine) == 3:
                 if tokensLine[1].type == "Identifier":
@@ -42,26 +39,21 @@ def parseLine(tokensLine: list, variables: list):
                         if tokensLine[2].type == "Number":
                             return Expression(tokensLine[0].text, len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))]), variables
                         elif tokensLine[2].type == "Identifier":
-                            if tokensLine[1].text in variables:
+                            if tokensLine[2].text in variables:
                                 return Expression(tokensLine[0].text, len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables
                             else:
-                                print("Unknown variable name: %s" % tokensLine[2].text)
-                                return 1
+                                raise Exception("Unknown variable name: %s" % tokensLine[2].text)   
                         else:
-                            print("Expected a Number or an Identifier, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
-                            return 1
+                            raise Exception("Expected a Number or an Identifier, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))    
                     else:
-                        print("Unknown variable name: %s" % tokensLine[1].text)
-                        return 1
+                        raise Exception("Unknown variable name: %s" % tokensLine[1].text) 
                 else:
-                    print("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
-                    return 1
+                    raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
             else:
-                print("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
-                return 1 
+                raise Exception("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
+                 
 
 def parseLoop(tokens: list, variables: list):  
-    print(tokens)
     body = parse(tokens[1:-1], variables)
     if len(tokens[-1]) < 2:
         return Loop(body, None, None), variables
@@ -71,11 +63,10 @@ def parseLoop(tokens: list, variables: list):
         return Loop(body, Variable(tokens[-1][1].text), Value(int(tokens[-1][2].text))), variables
     else:
         if len(tokens[-1]) < 3:
-            print("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
-            return 1
+            raise Exception("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
         else:
-            print("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
-            return 1
+            raise Exception("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
+            
     
 def parse(tokens: list, variables = None):
     if not tokens:
@@ -87,7 +78,7 @@ def parse(tokens: list, variables = None):
         try:
             loopEnd = loopLocations.index(True, 1)
         except ValueError as _:
-            print("Lus opened but not closed.")
+            raise Exception("Lus opened but not closed.")
         temp, variables = parseLoop(tokens[:loopEnd+1], variables)
         return [temp] + parse(tokens[loopEnd+1:], variables)
     if len(tokens) < 2:

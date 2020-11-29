@@ -1,13 +1,16 @@
-zeg_na " Hello my World! " " pleasework " " i work "
-stel a 2000 
-stel b "fuck"
-// stapel a 2
-// stapel a b
-// stapel a b in c
+zeg_na " Hello World! " " Niet vergeten om spaties te zetten tussen " " de woorden en de haakjes "
 
-// geen stel in lus
-// commentaar
+stel a 20 
+stel b 8
+stapel a 2
+stapel a b
+
+
+zeg_na " geen stel gebruiken in lus "
+// commentaar werkt zo
 lus
 verklein a 1
-zeg_na " oef lussen is naar "  a b // hallo
+zeg_na " loops waren lastig om te maken "  a b // en commentaar werkt ook zo
 sul a 0
+zeg_na " maar ze werken nu als een while not "
+zeg_na " Raak niet verward door de syntax. de conditie wordt voor iedere iteratie gecheckt, niet erna "

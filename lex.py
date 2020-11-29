@@ -13,7 +13,7 @@ def restoreSplitStrings(l: list):
     try:
         nextoccurence = l.index('"', first+1)
     except ValueError as _:
-        print("Syntax Error: String opened but not closed")
+        raise Exception("Syntax Error: String opened but not closed")
     else:
         return l[:first] + [reduce(lambda x, y: x + ' ' + y, l[first:nextoccurence+1])] + restoreSplitStrings(l[nextoccurence+1:])
 
@@ -38,7 +38,7 @@ def genToken(w: str):
     if w == "lus":
         return Token("LoopEnd", w)
     else:
-        raise Exception("Fuck moet ik hier mee, ouwe: " + w)
+        raise Exception("Invalid Syntax: " + w)
 
 class Token:
     def __init__(self, type_: str, text_: str):
