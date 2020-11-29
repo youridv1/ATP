@@ -3,6 +3,7 @@ from collections import namedtuple
 Expression = namedtuple("Expression", ["function", "argc", "args"])
 Variable = namedtuple("Variable", ["name"])
 Value = namedtuple("Value", ["content"])
+Loop = namedtuple("Loop", ["body", "Variable", "Value"])
 
 #TO DO
 #Error klasse maken prolly enum 
@@ -58,20 +59,37 @@ def parseLine(tokensLine: list, variables: list):
             else:
                 print("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
                 return 1 
-    #TO DO: 
-    #Parse loops because fuck that
-    if tokensLine[0].type == "Identifier":
-        if tokensLine[0].text == "lus":
-            pass
-        if tokensLine[0].text == "sul":
-            pass
+
+def parseLoop(tokens: list, variables: list):  
+    print(tokens)
+    body = parse(tokens[1:-1], variables)
+    if len(tokens[-1]) < 2:
+        return Loop(body, None, None), variables
+    elif len(tokens[-1]) < 3 and tokens[-1][1].type == "Identifier":
+        return Loop(body, Variable(tokens[-1][1].text), 0), variables
+    elif tokens[-1][1].type == "Identifier" and tokens[-1][2].type == "Number":
+        return Loop(body, Variable(tokens[-1][1].text), Value(int(tokens[-1][2].text))), variables
+    else:
+        if len(tokens[-1]) < 3:
+            print("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
+            return 1
+        else:
+            print("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
+            return 1
     
 def parse(tokens: list, variables = None):
     if not tokens:
-        print("Unexpected: Empty Tokens list")
-        return 1
+        return []
     if variables == None:
         variables = []
+    if tokens[0][0].text == "lus":
+        loopLocations = list(map(lambda x: True if x[0].text == "sul" else False, tokens))
+        try:
+            loopEnd = loopLocations.index(True, 1)
+        except ValueError as _:
+            print("Lus opened but not closed.")
+        temp, variables = parseLoop(tokens[:loopEnd+1], variables)
+        return [temp] + parse(tokens[loopEnd+1:], variables)
     if len(tokens) < 2:
         temp, _ = parseLine(tokens[0], variables)
         return [temp]
