@@ -3,44 +3,19 @@ from enum import Enum
 import operator
 import re
 
-def recLast(l : list):
-    """
-    returns index of last string with last character '"'
-    """
-    # print(l)
-    if not l:
-        return -1
-    if l[-1][-1] == '"':
-        return len(l) - 1 
-    else:
-        return recLast(l[:-1])
-
-def recFirst(l : list):
-    """
-    returns index of last string with first character '"'
-    """
-    if not l:
-        return -1
-    if l[-1][0] == '"':
-        return len(l) - 1 
-    else:
-        return recFirst(l[:-1])
-
-def restoreSplitStrings(l : list):
-    """
-    finds split up strings and restores them
-    """
+def restoreSplitStrings(l: list):
     if not l:
         return []
-    if recFirst(l) >= 0:
-        if recFirst(l) < recLast(l):
-            return restoreSplitStrings(l[:recFirst(l)]) + [str(reduce(lambda x, y: x+' '+y, l[recFirst(l):recLast(l)+1]))] + l[recLast(l)+1:]
-        if recFirst(l) == recLast(l):
-            return restoreSplitStrings(l[:recFirst(l)]) + [l[recLast(l)]] + l[recLast(l)+1:]
-        if recFirst(l) > recLast(l):
-            raise Exception("Syntax Error: String opened but not closed")
-    else:
+    try:
+        first = l.index('"')
+    except ValueError as _:
         return l
+    try:
+        nextoccurence = l.index('"', first+1)
+    except ValueError as _:
+        print("Syntax Error: String opened but not closed")
+    else:
+        return l[:first] + [reduce(lambda x, y: x + ' ' + y, l[first:nextoccurence+1])] + restoreSplitStrings(l[nextoccurence+1:])
 
 def genToken(w: str):
     """

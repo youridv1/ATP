@@ -3,7 +3,7 @@ from AST import Expression, Variable, Value
 
 def interpretExpression(exp: namedtuple, memory: dict):
     if exp.function == "zeg_na":
-        print(*map(lambda x: x[1:-1] if '"' in x else memory[x], exp.args))
+        print(*map(lambda x: x[2:-2] if '"' in x else memory[x], exp.args))
     elif exp.function == "stel":
         memory[exp.args[0].name] = exp.args[1].content
     elif exp.function == "stapel":

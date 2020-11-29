@@ -1,4 +1,4 @@
-zeg_na "Hello my World!" "pleasework" "i work"
+zeg_na " Hello my World! " " pleasework " " i work "
 stel a 2 
 stel b 4
 stapel a 2
@@ -8,5 +8,5 @@ stapel a b
 // commentaar
 // lus
 verklein a 1
-zeg_na "oef lussen is naar" b a // hallo
+zeg_na " oef lussen is naar " b a // hallo
 // sul a
