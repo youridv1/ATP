@@ -1,9 +1,12 @@
 from collections import namedtuple
+from lex import lex
 
 Expression = namedtuple("Expression", ["function", "argc", "args"])
 Variable = namedtuple("Variable", ["name"])
 Value = namedtuple("Value", ["content"])
 Loop = namedtuple("Loop", ["body", "Variable", "Value"])
+Function = namedtuple("Function", ["body"])
+Call = namedtuple("Call", ["name", "result", "argc", "args"])
 
 #TO DO
 #Error klasse maken prolly enum 
@@ -26,12 +29,26 @@ def parseLine(tokensLine: list, variables: list):
                     elif tokensLine[2].type == "String":
                         variables.append(tokensLine[1].text)
                         return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(tokensLine[2].text)]), variables
+                    elif tokensLine[2].type == "Identifier":
+                            if tokensLine[2].text in variables:
+                                variables.append(tokensLine[1].text)
+                                return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables   
+                            else:
+                                raise Exception("Unknown variable name: %s" % tokensLine[2].text)
                     else:
                         raise Exception("Expected a Number or a String, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
                 else:
                     raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[0].type, tokensLine[0].text))
+            elif len(tokensLine) == 4:
+                if tokensLine[2].text == "args":
+                    if tokensLine[3].type == "Number":
+                        return Expression("stel", len(tokensLine[1:]), list(map(lambda x: x.text, tokensLine[1:]))), variables
+                    else:
+                        raise Exception("Only tokens of type Number can be used as an index, got %s instead" % tokensLine[3].type)
+                else:
+                    raise Exception("Passing 3 arguments to stel is only allowed when indexing an argument list")             
             else:
-                raise Exception("Stel only takes 2 arguments. %s were given." % len(tokensLine[1:]))   
+                raise Exception("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))   
         if tokensLine[0].text in ["stapel", "verklein"]:
             if len(tokensLine) == 3:
                 if tokensLine[1].type == "Identifier":
@@ -51,6 +68,14 @@ def parseLine(tokensLine: list, variables: list):
                     raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
             else:
                 raise Exception("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
+    if tokensLine[0].text == "definieer":
+        if len(tokensLine) == 3:
+            if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
+                return Function(parse(lex(tokensLine[2].text + ".yo"))), variables
+            else:
+                raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
+        else:
+            raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
                  
 
 def parseLoop(tokens: list, variables: list):  

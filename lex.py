@@ -21,7 +21,7 @@ def genToken(w: str):
     """
     Gets token out of word
     """
-    builtins = ["zeg_na", "stel", "stapel", "verklein"]
+    builtins = ["zeg_na", "stel", "stapel", "verklein", "definieer"]
     operators = ["in"]
     if w in builtins:
         return Token("BuiltIn", w)
@@ -38,7 +38,7 @@ def genToken(w: str):
     if w == "lus":
         return Token("LoopEnd", w)
     else:
-        raise Exception("Invalid Syntax: " + w)
+        raise Exception("Invalid Syntax: %s" % w)
 
 class Token:
     def __init__(self, type_: str, text_: str):
