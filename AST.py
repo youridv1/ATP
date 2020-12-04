@@ -5,7 +5,7 @@ Expression = namedtuple("Expression", ["function", "argc", "args"])
 Variable = namedtuple("Variable", ["name"])
 Value = namedtuple("Value", ["content"])
 Loop = namedtuple("Loop", ["body", "Variable", "Value"])
-Function = namedtuple("Function", ["body"])
+Function = namedtuple("Function", ["name", "body"])
 Call = namedtuple("Call", ["name", "result", "argc", "args"])
 
 #TO DO
@@ -49,7 +49,7 @@ def parseLine(tokensLine: list, variables: list):
                     raise Exception("Passing 3 arguments to stel is only allowed when indexing an argument list")             
             else:
                 raise Exception("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))   
-        if tokensLine[0].text in ["stapel", "verklein"]:
+        elif tokensLine[0].text in ["stapel", "verklein"]:
             if len(tokensLine) == 3:
                 if tokensLine[1].type == "Identifier":
                     if tokensLine[1].text in variables:
@@ -68,14 +68,18 @@ def parseLine(tokensLine: list, variables: list):
                     raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
             else:
                 raise Exception("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
-    if tokensLine[0].text == "definieer":
-        if len(tokensLine) == 3:
-            if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
-                return Function(parse(lex(tokensLine[2].text + ".yo"))), variables
+        elif tokensLine[0].text == "definieer":
+            if len(tokensLine) == 3:
+                if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
+                    variables.append(tokensLine[1].text)
+                    return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"))), variables
+                else:
+                    raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
             else:
-                raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
-        else:
-            raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
+                raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
+    if tokensLine[0].type == "Identifier":
+        if tokensLine[0].text in variables:
+            return Call(tokensLine[0], None, len(tokensLine[2:]), tokensLine[2:]), variables
                  
 
 def parseLoop(tokens: list, variables: list):  
@@ -112,4 +116,3 @@ def parse(tokens: list, variables = None):
     else:
         temp, variables = parseLine(tokens[0], variables) 
         return [temp] + parse(tokens[1:], variables)
-

@@ -16,4 +16,4 @@ zeg_na " Raak niet verward door de syntax. de conditie wordt voor iedere iterati
 
 definieer eersteFunctie function
 
-// eersteFunctie leeg " de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen " " de rest zijn parameters die meegegeven worden (mocht dit ooit gaan werken) "
+eersteFunctie leeg " de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen " " de rest zijn parameters die meegegeven worden (mocht dit ooit gaan werken) "

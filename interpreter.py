@@ -1,5 +1,5 @@
 from collections import namedtuple
-from AST import Expression, Variable, Value, Loop
+from AST import Expression, Variable, Value, Loop, Function, Call
 
 def interpretLoop(exp: namedtuple, memory: dict):
     if not memory[exp.Variable.name] == exp.Value.content:
@@ -31,6 +31,9 @@ def interpretExpression(exp: namedtuple, memory: dict):
             memory[exp.args[0].name] -= exp.args[1].content
         else:
             raise Exception("Verklein only works with int, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
+    elif type(exp) == Function:
+        memory[exp.name] = exp.body
+        return memory
     else:
         raise Exception("Expected BuiltIn or Identifier, got %s" % exp.function)
     return memory
