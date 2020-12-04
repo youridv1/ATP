@@ -11,10 +11,27 @@ def interpretLoop(exp: namedtuple, memory: dict):
 def interpretExpression(exp: namedtuple, memory: dict):
     if type(exp) == Loop:
         memory = interpretLoop(exp, memory)
+    elif type(exp) == Function:
+        memory[exp.name] = exp.body
+        return memory
+    elif type(exp) == Call:
+        if exp.name in memory:
+            if exp.result == None: 
+                interpret(memory[exp.name], {"args" : list(map(lambda x: x.content if type(x) == Value else memory[x.name], exp.args))})
+                return memory
+            else:
+                temp = interpret(memory[exp.name], {"args" : list(map(lambda x: x.content if type(x) == Value else memory[x.name], exp.args)), exp.result : None})
+                memory[exp.result] = temp[exp.result]
+                return memory
+        else:
+            raise Exception("Onbekende functie. Eerst Definieren")
     elif exp.function == "zeg_na":
         print(*map(lambda x: x[2:-2] if '"' in x else (memory[x] if type(memory[x]) == int else memory[x][2:-2]), exp.args))
     elif exp.function == "stel":
-        memory[exp.args[0].name] = exp.args[1].content
+        if exp.argc == 2:
+            memory[exp.args[0].name] = exp.args[1].content
+        elif exp.argc == 3:
+            memory[exp.args[0].name] = memory["args"][exp.args[2].content]
     elif exp.function == "stapel":
         if type(exp.args[1]) == Value:
             if type(memory[exp.args[0].name]) == type(exp.args[1].content):
@@ -31,9 +48,6 @@ def interpretExpression(exp: namedtuple, memory: dict):
             memory[exp.args[0].name] -= exp.args[1].content
         else:
             raise Exception("Verklein only works with int, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
-    elif type(exp) == Function:
-        memory[exp.name] = exp.body
-        return memory
     else:
         raise Exception("Expected BuiltIn or Identifier, got %s" % exp.function)
     return memory

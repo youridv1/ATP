@@ -12,7 +12,8 @@ def main():
     x = a.parse(b)
     for y in x:
         print(y)
-    # i.interpret(x)
+    
+    print(i.interpret(x))
     
 if __name__ == "__main__":
     main()
