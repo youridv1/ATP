@@ -17,11 +17,17 @@ def interpretExpression(exp: namedtuple, memory: dict):
     elif type(exp) == Call:
         if exp.name in memory:
             if exp.result == None: 
-                interpret(memory[exp.name], {"args" : list(map(lambda x: x.content if type(x) == Value else memory[x.name], exp.args))})
+                args = {"args" : list(map(lambda x: x.content if type(x) == Value else memory[x.name], exp.args))}
+                tmp = dict(filter(lambda x: type(x[1]) == list and x[0] != "args", memory.items()))
+                args = {**args, **tmp}
+                interpret(memory[exp.name], args)
                 return memory
             else:
-                temp = interpret(memory[exp.name], {"args" : list(map(lambda x: x.content if type(x) == Value else memory[x.name], exp.args)), exp.result : None})
-                memory[exp.result] = temp[exp.result]
+                args = {"args" : list(map(lambda x: x.content if type(x) == Value else memory[x.name], exp.args))}
+                tmp = dict(filter(lambda x: type(x[1]) == list and x[0] != "args", memory.items()))
+                args = {**args, **tmp}
+                temp = interpret(memory[exp.name], args)
+                memory[exp.result] = temp["result"]
                 return memory
         else:
             raise Exception("Onbekende functie. Eerst Definieren")

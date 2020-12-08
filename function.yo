@@ -1,5 +1,6 @@
-zeg_na " so ez "
-stel a 1
-stel youri 21
+//zeg_na " so ez "
+// stel a 1
+stel result 21
 stel param args 0
 zeg_na param
+tweedeFunctie leeg " hallo vanuit function "

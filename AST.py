@@ -73,14 +73,15 @@ def parseLine(tokensLine: list, variables: list):
         elif tokensLine[0].text == "definieer":
             if len(tokensLine) == 3:
                 if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
-                    variables.append(tokensLine[1].text)
-                    return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"))), variables
+                    variables.append(tokensLine[1].text + '~')
+                    tmp = list(filter(lambda x: x[-1] == '~', variables))
+                    return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"), tmp)), variables
                 else:
                     raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
             else:
                 raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
     elif tokensLine[0].type == "Identifier":
-        if tokensLine[0].text in variables:
+        if tokensLine[0].text + '~' in variables:
             if all(map(lambda x: True if x.type == "String" or x.type == "Number" else (True if x.text in variables else False), tokensLine[2:])):
                 if tokensLine[1].type == "Identifier" and tokensLine[1].text == "leeg":
                     return Call(tokensLine[0].text, None, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables
