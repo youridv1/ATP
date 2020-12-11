@@ -5,6 +5,7 @@ Expression = namedtuple("Expression", ["function", "argc", "args"])
 Variable = namedtuple("Variable", ["name"])
 Value = namedtuple("Value", ["content"])
 Loop = namedtuple("Loop", ["body", "Variable", "Value"])
+If = namedtuple("If", ["body", "LHS", "RHS"])
 Function = namedtuple("Function", ["name", "body"])
 Call = namedtuple("Call", ["name", "result", "argc", "args"])
 
@@ -51,7 +52,7 @@ def parseLine(tokensLine: list, variables: list):
                     raise Exception("Passing 3 arguments to stel is only allowed when indexing an argument list")             
             else:
                 raise Exception("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))   
-        elif tokensLine[0].text in ["stapel", "verklein"]:
+        elif tokensLine[0].text in ["stapel", "verklein", "verdeel", "produceer"]:
             if len(tokensLine) == 3:
                 if tokensLine[1].type == "Identifier":
                     if tokensLine[1].text in variables:
@@ -111,8 +112,29 @@ def parseLoop(tokens: list, variables: list):
             raise Exception("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
         else:
             raise Exception("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
-            
-    
+
+def parseIf(tokens: list, variables: list):
+    body = parse(tokens[1:-1], variables) 
+    if len(tokens[0]) == 3:
+        if tokens[0][1].type == "Identifier":
+            if tokens[0][1].text in variables:
+                LHS = Variable(tokens[0][1].text)
+        elif tokens[0][1].type == "Number":
+                LHS = Value(tokens[0][1].text)
+        else:
+            raise Exception("First type must be identifier or number")
+        if tokens[0][2].type == "Identifier":
+            if tokens[0][2].text in variables:
+                RHS = Variable(tokens[0][2].text)
+        elif tokens[0][2].type == "Number":
+                RHS = Value(tokens[0][2].text)
+        else:
+            raise Exception("Second type must be identifier or number")
+        return If(body, LHS, RHS), variables
+    else:
+        raise Exception("If needs two arguments to compare")
+
+
 def parse(tokens: list, variables = None):
     if not tokens:
         return []
@@ -126,6 +148,14 @@ def parse(tokens: list, variables = None):
             raise Exception("Lus opened but not closed.")
         temp, variables = parseLoop(tokens[:loopEnd+1], variables)
         return [temp] + parse(tokens[loopEnd+1:], variables)
+    if tokens[0][0].text == "indien":
+        endifs = list(map(lambda x: True if x[0].text == "neidni" else False, tokens))
+        try:
+            end = endifs.index(True, 1)
+        except ValueError as _:
+            raise Exception("Indien opened but not closed.")
+        temp, variables = parseIf(tokens[:end+1], variables)
+        return [temp] + parse(tokens[end+1:], variables)
     if len(tokens) < 2:
         temp, _ = parseLine(tokens[0], variables)
         return [temp]

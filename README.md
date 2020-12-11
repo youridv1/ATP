@@ -10,8 +10,8 @@ Goto-statements? Voorbeeld: [file] - [regel]
 Lambda-calculus? Voorbeeld: [files] - [regels]  
 
 Bevat: 
-Classes met inheritance: bijvoorbeeld [file] - [regel]  
-Object-printing voor elke class: [ja/nee]  
+Classes met inheritance: bijvoorbeeld [AST] - [4-9]  
+Object-printing voor elke class: [ja]  
 Decorator: functiedefinitie op [file] - [regel], toegepast op [file] - [regel]  
 Type-annotatie: Haskell-stijl in comments: [ja/nee]; Python-stijl in functiedefinities: [ja, maar nog niet volledig]   
 Minstens drie toepassingen van hogere-orde functies:  

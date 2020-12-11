@@ -1,5 +1,5 @@
 from collections import namedtuple
-from AST import Expression, Variable, Value, Loop, Function, Call
+from AST import Expression, Variable, Value, Loop, Function, Call, If
 
 def interpretLoop(exp: namedtuple, memory: dict):
     if not memory[exp.Variable.name] == exp.Value.content:
@@ -13,6 +13,13 @@ def interpretExpression(exp: namedtuple, memory: dict):
         memory = interpretLoop(exp, memory)
     elif type(exp) == Function:
         memory[exp.name] = exp.body
+        return memory
+    elif type(exp) == If:
+        extractor = lambda x: int(x.content) if type(x) == Value else int(memory[x.name])
+        LHS = extractor(exp.LHS)
+        RHS = extractor(exp.RHS)
+        if LHS == RHS:
+            memory = interpret(exp.body, memory)
         return memory
     elif type(exp) == Call:
         if exp.name in memory:
@@ -50,10 +57,38 @@ def interpretExpression(exp: namedtuple, memory: dict):
             else:
                 raise Exception("Stapel only works with equal types, not %s and %s" % (type(memory[exp.args[0].name]), type(memory[exp.args[1].name])))
     elif exp.function == "verklein":
-        if type(memory[exp.args[0].name]) == int and type(exp.args[1].content) == int:
-            memory[exp.args[0].name] -= exp.args[1].content
+        if type(exp.args[1]) == Value:
+            if type(memory[exp.args[0].name]) == int and type(exp.args[1].content) == int:
+                memory[exp.args[0].name] -= exp.args[1].content
+            else:
+                raise Exception("verklein only works with int")
         else:
-            raise Exception("Verklein only works with int, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
+            if type(memory[exp.args[0].name]) == int and type(memory[exp.args[1].name]) == int:
+                memory[exp.args[0].name] -= memory[exp.args[1].name]
+            else:
+                raise Exception("Verklein only works with int, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
+    elif exp.function == "produceer":
+        if type(exp.args[1]) == Value:
+            if type(memory[exp.args[0].name]) == int and type(exp.args[1].content) == int:
+                memory[exp.args[0].name] *= exp.args[1].content
+            else:
+                raise Exception("produceer only works with int")
+        else:
+            if type(memory[exp.args[0].name]) == int and type(memory[exp.args[1].name]) == int:
+                memory[exp.args[0].name] *= memory[exp.args[1].name]
+            else:
+                raise Exception("produceer only works with int, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
+    elif exp.function == "verdeel":
+        if type(exp.args[1]) == Value:
+            if type(memory[exp.args[0].name]) == int and type(exp.args[1].content) == int:
+                memory[exp.args[0].name] //= exp.args[1].content
+            else:
+                raise Exception("produceer only works with int")
+        else:
+            if type(memory[exp.args[0].name]) == int and type(memory[exp.args[1].name]) == int:
+                memory[exp.args[0].name] //= memory[exp.args[1].name]
+            else:
+                raise Exception("produceer only works with int, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
     else:
         raise Exception("Expected BuiltIn or Identifier, got %s" % exp.function)
     return memory

@@ -35,8 +35,12 @@ def genToken(w: str):
         return Token("Identifier", w)
     if w == "lus":
         return Token("LoopStart", w)
-    if w == "lus":
+    if w == "sul":
         return Token("LoopEnd", w)
+    if w == "indien":
+        return Token("If", w)
+    if w == "neidni":
+        return Token("Endif", w)
     else:
         raise Exception("Invalid Syntax: %s" % w)
 
