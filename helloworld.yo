@@ -1,35 +1,35 @@
-zeg_na " Hello World! " " Niet vergeten om spaties te zetten tussen " " de woorden en de haakjes "
+zeg_na "Hello World!" "Niet vergeten om spaties te zetten tussen" "de woorden en de haakjes"
 
 stel a 20 
 stel b 8
 stapel a 2
 stapel a b
 
-zeg_na " geen stel gebruiken in lus "
+zeg_na "geen stel gebruiken in lus"
 // commentaar werkt zo
 lus
 verklein a 1
-zeg_na " loops waren lastig om te maken "  a b // en commentaar werkt ook zo
+zeg_na "loops waren lastig om te maken"  a b // en commentaar werkt ook zo
 sul a 0
-zeg_na " maar ze werken nu als een while not "
-zeg_na " Raak niet verward door de syntax. de conditie wordt voor iedere iteratie gecheckt, niet erna "
+zeg_na "maar ze werken nu als een while not"
+zeg_na "Raak niet verward door de syntax. de conditie wordt voor iedere iteratie gecheckt, niet erna"
 
 definieer tweedeFunctie functiontwo
 definieer eersteFunctie function
 
-eersteFunctie youri " de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen "
-tweedeFunctie leeg " hallo vanuit hello world "
+eersteFunctie youri "de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen"
+tweedeFunctie leeg "hallo vanuit hello world"
 
 zeg_na a youri
 
 indien a 0 
-zeg_na " nul! "
+zeg_na "nul!"
 stel b 0
 neidni
 indien a 1
-zeg_na " een! "
+zeg_na "een!"
 stel b 0
 neidni
 indien b 8
-zeg_na " iets anders! "
+zeg_na "iets anders!"
 neidni

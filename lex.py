@@ -41,8 +41,7 @@ def genToken(w: str):
         return Token("If", w)
     if w == "neidni":
         return Token("Endif", w)
-    else:
-        raise Exception("Invalid Syntax: %s" % w)
+    raise Exception("Invalid Syntax: %s" % w)
 
 class Token:
     def __init__(self, type_: str, text_: str):
@@ -51,11 +50,58 @@ class Token:
     def __repr__(self):
         return "[" + self.type + ", " + self.text + "]"
 
+def lexString(toLex: str): # -> (str, str)
+    if not toLex:
+        return ("","")
+    head, *tail = toLex
+    if head != '"':
+        string, rest = lexString(tail)
+        return (head+string, rest)
+    else:
+        return (head, tail)
+
+def lexToken(toLex: str):
+    if not toLex:
+        return ("","")
+    head, *tail = toLex
+    if head != " ":
+        string, rest = lexToken(tail)
+        return (head+string, rest)
+    else:
+        return ("", tail)
+
+def lexLine(toLex: str):
+    if not toLex:
+        return ([],"")
+    head, *tail = toLex
+    if head.isalnum():
+        token, rest = lexToken(toLex)
+        string, rest2 = lexLine(rest)
+        return ([token,string], rest2)
+    elif head == " ":
+        string, rest = lexLine("".join(tail))
+        return (string, rest)
+    elif head == '"':
+        string, rest = lexString("".join(tail))
+        string2, rest2 = lexLine(rest)
+        return ([head+string,string2], rest2)
+    return ([], toLex) 
+
+def flatten(t):
+    if not t:
+        return []
+    if len(t) == 1:
+        return t[0]
+    return [t[0]] + flatten(t[1])
+
 def lex(filename: str):
     with open(filename) as file: 
         lines = file.readlines()
     # filter out comments
     lines = map(lambda x: x.split("//", 1)[0], lines)
-    # generate token list
-    tokens = list(filter(None, map(lambda x: list(map(lambda y: genToken(y), x)), map(lambda x: restoreSplitStrings(x), map(lambda x: x.split(), lines)))))
-    return tokens
+    strippedlines = map(lambda x: x.strip(), lines)
+    words = map(lambda x: lexLine(x), strippedlines)
+    flattenedWords = map(lambda x: flatten(x[0]), words)
+    tokens = map(lambda x: list(map(lambda y: genToken(y), x)), flattenedWords)
+    tokens2 = filter(None, tokens)
+    return list(tokens2)
