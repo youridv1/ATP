@@ -2,20 +2,7 @@ from functools import reduce
 from enum import Enum
 import operator
 import re
-
-def restoreSplitStrings(l: list):
-    if not l:
-        return []
-    try:
-        first = l.index('"')
-    except ValueError as _:
-        return l
-    try:
-        nextoccurence = l.index('"', first+1)
-    except ValueError as _:
-        raise Exception("Syntax Error: String opened but not closed")
-    else:
-        return l[:first] + [reduce(lambda x, y: x + ' ' + y, l[first:nextoccurence+1])] + restoreSplitStrings(l[nextoccurence+1:])
+from composite import composite_function
 
 def genToken(w: str):
     """
@@ -94,14 +81,25 @@ def flatten(t):
         return t[0]
     return [t[0]] + flatten(t[1])
 
+def removeComment(toLex: str):
+    return toLex.split("//", 1)[0]
+
+def myStrip(toLex: str):
+    return toLex.strip()
+
+def myHead(a: tuple):
+    return a[0]
+
+def genTokens(a: list):
+    return list(map(lambda x: genToken(x), a))
+
+def emptyLineFilter(a: list):
+    return filter(None, a)
+
+linesToTokens = composite_function(genTokens, flatten, myHead, lexLine, myStrip, removeComment)
+
 def lex(filename: str):
     with open(filename) as file: 
         lines = file.readlines()
-    # filter out comments
-    lines = map(lambda x: x.split("//", 1)[0], lines)
-    strippedlines = map(lambda x: x.strip(), lines)
-    words = map(lambda x: lexLine(x), strippedlines)
-    flattenedWords = map(lambda x: flatten(x[0]), words)
-    tokens = map(lambda x: list(map(lambda y: genToken(y), x)), flattenedWords)
-    tokens2 = filter(None, tokens)
-    return list(tokens2)
+    tokens = filter(None, map(linesToTokens, lines))
+    return list(tokens)
