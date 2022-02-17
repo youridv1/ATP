@@ -13,15 +13,12 @@ def parseStel(tokensLine: list, variables: list):
     if len(tokensLine) == 3:
         if tokensLine[1].type == "Identifier":
             if tokensLine[2].type == "Number":
-                variables.append(tokensLine[1].text)
-                return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))]), variables
+                return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(int(tokensLine[2].text))]), variables+[tokensLine[1].text]
             elif tokensLine[2].type == "String":
-                variables.append(tokensLine[1].text)
-                return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(tokensLine[2].text)]), variables
+                return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Value(tokensLine[2].text)]), variables+[tokensLine[1].text]
             elif tokensLine[2].type == "Identifier":
                     if tokensLine[2].text in variables:
-                        variables.append(tokensLine[1].text)
-                        return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables   
+                        return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables+[tokensLine[1].text]   
                     else:
                         raise Exception("Unknown variable name: %s" % tokensLine[2].text)
             else:
@@ -64,9 +61,8 @@ def parseMathStatement(tokensLine: list, variables: list):
 def parseDefinition(tokensLine: list, variables: list):
     if len(tokensLine) == 3:
         if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
-            variables.append(tokensLine[1].text + '~')
             tmp = list(filter(lambda x: x[-1] == '~', variables))
-            return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"), tmp)), variables
+            return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"), tmp)), variables+[tokensLine[1].text + '~']
         else:
             raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
     else:
@@ -78,8 +74,7 @@ def parseFunctionCall(tokensLine: list, variables: list):
             if tokensLine[1].type == "Identifier" and tokensLine[1].text == "leeg":
                 return Call(tokensLine[0].text, None, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables
             elif tokensLine[1].type == "Identifier" and tokensLine[1].text not in variables:
-                variables.append(tokensLine[1].text)
-                return Call(tokensLine[0].text, tokensLine[1].text, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables
+                return Call(tokensLine[0].text, tokensLine[1].text, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables+[tokensLine[1].text]
             else:
                 raise Exception("Een functie Call verwacht een ongebruikte naam voor de teruggave of 'leeg'")
         else:
