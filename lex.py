@@ -100,6 +100,5 @@ linesToTokens = composite_function(genTokens, flatten, myHead, lexLine, myStrip,
 
 def lex(filename: str):
     with open(filename) as file: 
-        lines = file.readlines()
-    tokens = filter(None, map(linesToTokens, lines))
-    return list(tokens)
+        lines = file.read().replace(";", "\n").split("\n")
+    return list(filter(None, map(linesToTokens, lines)))

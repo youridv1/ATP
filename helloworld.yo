@@ -27,8 +27,7 @@ zeg_na "nul!"
 stel b 0
 neidni
 indien a 1
-zeg_na "een!"
-stel b 0
+zeg_na "een!"; stel b 0
 neidni
 indien b 8
 zeg_na "iets anders!"
