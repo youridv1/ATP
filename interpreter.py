@@ -42,7 +42,10 @@ def interpretExpression(exp: namedtuple, memory: dict):
         print(*map(lambda x: x[1:-1] if '"' in x else (memory[x] if type(memory[x]) == int else memory[x][1:-1]), exp.args))
     elif exp.function == "stel":
         if exp.argc == 2:
-            memory[exp.args[0].name] = exp.args[1].content
+            if type(exp.args[1]) == Value:
+                memory[exp.args[0].name] = exp.args[1].content
+            else:
+                memory[exp.args[0].name] = memory[exp.args[1].name]
         elif exp.argc == 3:
             memory[exp.args[0].name] = memory["args"][exp.args[2].content]
     elif exp.function == "stapel":

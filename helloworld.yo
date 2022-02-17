@@ -32,3 +32,7 @@ neidni
 indien b 8
 zeg_na "iets anders!"
 neidni
+
+stel c b
+zeg_na c
+zeg_na b
