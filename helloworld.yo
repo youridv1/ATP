@@ -36,3 +36,7 @@ neidni
 stel c b
 zeg_na c
 zeg_na b
+
+stel y 2
+produceer y y 
+zeg_na y

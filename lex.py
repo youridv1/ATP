@@ -8,7 +8,7 @@ def genToken(w: str):
     """
     Gets token out of word
     """
-    builtins = ["zeg_na", "stel", "stapel", "verklein", "definieer"]
+    builtins = ["zeg_na", "stel", "stapel", "verklein", "definieer", "produceer"]
     operators = ["in"]
     if w in builtins:
         return Token("BuiltIn", w)
