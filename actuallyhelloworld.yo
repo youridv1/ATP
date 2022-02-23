@@ -1,2 +1,5 @@
 stel n 2
+stel a 4
+stel b 5
 produceer n n 
+produceer a b
