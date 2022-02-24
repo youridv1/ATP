@@ -7,22 +7,34 @@ sys.setrecursionlimit(20000)  # core dumped at 21804
 def beginFile():
     return
 
+def valueToRegister(value: Value, memory: dict, allRegisters: list): # puts an inline value in an available register 
+  register = [x for x in allRegisters if x not in memory.values()][0]
+  func, sign = ("mov", "#") if value.content < 256 else ("ldr", "=")
+  assembly = f"{func} {register}, {sign}{value.content}\n"
+  memory[value.content] = register
+  return assembly, memory
+
 # Returns string of assembly needed for this statement
 def compileExpression(toCompile: Expression, memory):
     allRegisters = ["r1", "r2", "r3", "r4", "r5", "r6", "r7"]
+    funcToAssem = {"produceer":"mul", "stapel":"add", "verklein":"sub"}
     match toCompile.function:
-        case "produceer":
-            if type(toCompile.args[1]) == Value: 
-                return "mul %s %s\n" % (memory[toCompile.args[0].name], "r2"), memory # need to figure out some kind of way to manage registers
+        case a if a in funcToAssem.keys():
+            if type(toCompile.args[1]) == Value:
+                memAssem, memory = valueToRegister(toCompile.args[1], memory, allRegisters)
+                snd = memory[toCompile.args[1].content]
             else: # variable
                 # for now we assume nothing ends up in memory and everything fits into registers
-                return "mul %s %s\n" % (memory[toCompile.args[0].name], memory[toCompile.args[1].name]), memory # "memory" will store the location of the data, so a register name or a memory address
+                memAssem = ""
+                snd = memory[toCompile.args[1].name]
+            return memAssem + f"{funcToAssem[a]} {memory[toCompile.args[0].name]}, {snd}, {memory[toCompile.args[0].name]}\n", memory # "memory" will store the location of the data, so a register name or a memory address
         case "stel":
             if type(toCompile.args[1]) == Value:
-                immed = "=immed" + str(toCompile.args[1].content)
+                func, sign = ("mov", "#") if toCompile.args[1].content < 256 else ("ldr", "=")
+                immed = sign + str(toCompile.args[1].content)
                 register = [x for x in allRegisters if x not in memory.values()][0]
                 memory[toCompile.args[0].name] = register
-                return "ldr %s %s\n" % (register, immed), memory
+                return f"{func} {register}, {immed}\n", memory
         case _:
             print(":(")
             return

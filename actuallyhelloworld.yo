@@ -3,3 +3,6 @@ stel a 4
 stel b 5
 produceer n n 
 produceer a b
+verklein a n
+stapel b n
+produceer n 2
