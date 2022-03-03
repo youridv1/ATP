@@ -5,7 +5,7 @@ import sys
 sys.setrecursionlimit(20000)  # core dumped at 21804
 
 def beginFile():
-    return
+    return ".cpu cortex-m0\n.align 2\n.text\n.global youri_main\nyouri_main:\n"
 
 def valueToRegister(value: Value, memory: dict, allRegisters: list): # puts an inline value in an available register 
   register = [x for x in allRegisters if x not in memory.values()][0]
@@ -48,11 +48,16 @@ def compile(ast: list, memory: dict = {}):
     return assembly+assembly2, memory
 
 
-def mainCompiler():
-    x = parse(lex("actuallyhelloworld.yo"))
-    assembly, _ = compile(x)
+def mainCompiler(fileName: str):
+    assembly = beginFile()
+    push = "push { r3, r4, r5, r6, r7, lr }\n"
+    pop = "pop { r3, r4, r5, r6, r7, lr }\n"
+    x = parse(lex(f"{fileName}.yo"))
+    compiledCode, _ = compile(x)
     print(x)
-    print(assembly)
+    with open(f"{fileName}.S", 'w') as f:
+        f.write(assembly + push + compiledCode + pop)
 
 if __name__ == "__main__":
-    mainCompiler()
+    fileName = "actuallyhelloworld"
+    mainCompiler(fileName)
