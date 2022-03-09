@@ -1,10 +1,9 @@
 .cpu cortex-m0
 .align 2
-.data
 .text
 .global youriMain
 youriMain:
-push { r1, r2, r3, r4, lr }
+push { r1, r2, r3, r4, r5, r6, r7, lr }
 mov r1, #2
 mov r2, #4
 mov r3, #5
@@ -16,4 +15,4 @@ mov r4, #2
 mul r1, r4, r1
 mov r0, r1
 bl printlnInteger
-pop { r1, r2, r3, r4, pc }
+pop { r1, r2, r3, r4, r5, r6, r7, pc }

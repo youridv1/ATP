@@ -82,6 +82,9 @@ def parseFunctionCall(tokensLine: list, variables: list):
     else:
         raise Exception("Functie niet gedefinieerd")
 
+def parseZegNa(tokensLine: list, variables: list):
+    return Expression(("zeg_na"), len(tokensLine[1:]), [Variable(x.text) if x.type == "Identifier" else Value(x.text) for x in tokensLine[1:]]), variables
+
 
 #TO DO
 #Error klasse maken prolly enum 
@@ -92,7 +95,7 @@ def parseLine(tokensLine: list, variables: list):
             # Check if arguments are strings ( all )
             # Implement alternative for when argument is variable name
             # Error thingie
-            return Expression("zeg_na", len(tokensLine[1:]), list(map(lambda x: x.text, tokensLine[1:]))), variables
+            return parseZegNa(tokensLine, variables)
         # TO DO:
         # Make it so the value of one variable can be assigned to another directly
         if tokensLine[0].text == "stel":

@@ -5,7 +5,7 @@ import sys
 sys.setrecursionlimit(20000)  # core dumped at 21804
 
 def beginFile():
-    return ".cpu cortex-m0\n.align 2\n.text\n.global youri_main\nyouri_main:\n"
+    return ".cpu cortex-m0\n.align 2\n.text\n.global youriMain\nyouriMain:\n"
 
 def valueToRegister(value: Value, memory: dict, allRegisters: list): # puts an inline value in an available register 
   register = [x for x in allRegisters if x not in memory.values()][0]
@@ -13,6 +13,10 @@ def valueToRegister(value: Value, memory: dict, allRegisters: list): # puts an i
   assembly = f"{func} {register}, {sign}{value.content}\n"
   memory[value.content] = register
   return assembly, memory
+
+def compileZegNa(toCompile, memory):
+    f = lambda x: f"mov r0, {memory[x.name]}\nbl printlnInteger\n" if type(x) == Variable else "oh fuck"
+    return "".join([f(x) for x in toCompile.args]), memory
 
 # Returns string of assembly needed for this statement
 def compileExpression(toCompile: Expression, memory):
@@ -35,6 +39,8 @@ def compileExpression(toCompile: Expression, memory):
                 register = [x for x in allRegisters if x not in memory.values()][0]
                 memory[toCompile.args[0].name] = register
                 return f"{func} {register}, {immed}\n", memory
+        case "zeg_na":
+            return compileZegNa(toCompile, memory)
         case _:
             print(":(")
             return
@@ -49,14 +55,14 @@ def compile(ast: list, memory: dict = {}):
 
 
 def mainCompiler(fileName: str):
-    assembly = beginFile()
-    push = "push { r3, r4, r5, r6, r7, lr }\n"
-    pop = "pop { r3, r4, r5, r6, r7, lr }\n"
+    fileBegin = beginFile()
+    push = "push { r1, r2, r3, r4, r5, r6, r7, lr }\n"
+    pop = "pop { r1, r2, r3, r4, r5, r6, r7, pc }\n"
     x = parse(lex(f"{fileName}.yo"))
     compiledCode, _ = compile(x)
     print(x)
     with open(f"{fileName}.S", 'w') as f:
-        f.write(assembly + push + compiledCode + pop)
+        f.write(fileBegin + push + compiledCode + pop)
 
 if __name__ == "__main__":
     fileName = "actuallyhelloworld"

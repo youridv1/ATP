@@ -6,3 +6,5 @@ produceer a b
 verklein a n
 stapel b n
 produceer n 2
+zeg_na n
+// zeg_na "bitch"
