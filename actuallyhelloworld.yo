@@ -6,5 +6,7 @@ produceer a b
 verklein a n
 stapel b n
 produceer n 2
+stapel n 4
 zeg_na n
-// zeg_na "bitch"
+zeg_na "een" "twee" "drie"
+zeg_na 4
