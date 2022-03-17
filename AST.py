@@ -63,6 +63,7 @@ def parseDefinition(tokensLine: list, variables: list):
         if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
             tmp = list(filter(lambda x: x[-1] == '~', variables))
             return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"), tmp)), variables+[tokensLine[1].text + '~']
+            #maybe dont call lexer here #makefile
         else:
             raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
     else:

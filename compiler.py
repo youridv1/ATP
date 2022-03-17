@@ -133,8 +133,7 @@ def compileExpression(toCompile: Expression, memory, data):
 
 
 def compileData(data):
-    def helper(x, y): return f"{x}: .asciz {y}\n"
-    bruh = [helper(key, value) for key, value in data.items()]
+    bruh = [f"{key}: .asciz {value}\n" for key, value in data.items()]
     return ".data\n\n" + "".join(bruh) + "\n"
 
 

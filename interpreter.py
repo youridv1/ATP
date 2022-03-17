@@ -97,7 +97,7 @@ def interpretExpression(exp: namedtuple, memory: dict):
     return memory
 
 def interpret(ast: list, memory = None):
-    if memory == None:
+    if not memory:
         memory = {}
     if len(ast) < 2:
         memory = interpretExpression(ast[0], memory)
