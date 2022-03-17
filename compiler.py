@@ -1,6 +1,7 @@
 from lex import lex
 from AST import Expression, Variable, Value, Loop, Function, Call, If, parse
 import sys
+import secrets
 
 sys.setrecursionlimit(20000)  # core dumped at 21804
 
@@ -38,15 +39,15 @@ def intToRegister(value, register = "r0"):
 
 def ZegNaHelper(arg, memory, data):
     match arg:
-        case arg if type(arg) == Variable:
-            register = memory[arg.name]
+        case Variable(name):
+            register = memory[name]
             if register[0].isupper(): # again quite hacky, but very useful
                 func = "printlnStr"
             else:
                 func = "printlnInteger"
             return f"mov r0, {register}\nbl {func}\n", memory, data
-        case arg if type(arg) == Value:
-            if '"' in arg.content:
+        case Value(content):
+            if '"' in content:
                 assembly, data = stringtoRegister(arg, data)
                 return assembly+"bl printlnStr\n", memory, data
             assembly = intToRegister(arg)
@@ -78,8 +79,30 @@ def compileStel(toCompile, memory, data, allRegisters):
             return f"{func} {register}, {immed}\n", memory, data
 
 
+def loadNameIfComponent(arg, memory):
+  match arg:
+    case Variable(name):
+      return "", memory[name]
+    case Value(_):
+      assembly = intToRegister(arg)
+      return assembly, "r0"
+
+
+def compileComparison(toCompile, memory, data):
+  #load lhs
+  lhsAssem, lhs = loadNameIfComponent(toCompile.LHS, memory)
+  #load rhs
+  rhsAssem, rhs = loadNameIfComponent(toCompile.RHS, memory)
+  return lhsAssem + rhsAssem + f"cmp {lhs}, {rhs}\n"
+
+
 def compileIf(toCompile, memory, data):
-    return            
+    comparison = compileComparison(toCompile, memory, data)
+    body, _, _ = compile(toCompile.body, memory, data)
+    ifHex = secrets.token_hex(5)
+    ifEnd = f"ifEnd_{ifHex}"
+    assembly = f"{comparison}BNE {ifEnd}\n{body}{ifEnd}:\n"
+    return assembly, memory, data
 
 
 def compileExpression(toCompile: Expression, memory, data):
