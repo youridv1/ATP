@@ -9,38 +9,47 @@ def beginFile(dataSegment=""):
     return f".cpu cortex-m0\n.align 2\n\n{dataSegment}.text\n.global youriMain\n\nyouriMain:\n"
 
 
+def getRegister(allRegisters, memory):
+    return [x for x in allRegisters if x.lower() not in memory.values() and x.upper() not in memory.values()][0]
+
+
 # puts an inline value in an available register
 def valueToRegister(value: Value, memory: dict, allRegisters: list):
-    register = [x for x in allRegisters if x not in memory.values()][0]
+    register = getRegister(allRegisters, memory)
     func, sign = ("mov", "#") if value.content < 256 else ("ldr", "=")
     assembly = f"{func} {register}, {sign}{value.content}\n"
     memory[value.content] = register
     return assembly, memory
 
 
-def stringToR0(value: Value, data: dict):
+def stringtoRegister(value: Value, data: dict, register: str = "r0"):
     key = f"LIT{len(data)}"
     data[key] = value.content
-    assembly = f"ldr r0, ={key}\n"
+    assembly = f"ldr {register}, ={key}\n"
     return assembly, data
 
 
-def intToR0(value):
+def intToRegister(value, register = "r0"):
     content = int(value.content)
     func, sign = ("mov", "#") if content < 256 else ("ldr", "=")
-    assembly = f"{func} r0, {sign}{content}\n"
+    assembly = f"{func} {register}, {sign}{content}\n"
     return assembly
 
 
 def ZegNaHelper(arg, memory, data):
     match arg:
         case arg if type(arg) == Variable:
-            return f"mov r0, {memory[arg.name]}\nbl printlnInteger\n", memory, data
+            register = memory[arg.name]
+            if register[0].isupper(): # again quite hacky, but very useful
+                func = "printlnStr"
+            else:
+                func = "printlnInteger"
+            return f"mov r0, {register}\nbl {func}\n", memory, data
         case arg if type(arg) == Value:
             if '"' in arg.content:
-                assembly, data = stringToR0(arg, data)
+                assembly, data = stringtoRegister(arg, data)
                 return assembly+"bl printlnStr\n", memory, data
-            assembly = intToR0(arg)
+            assembly = intToRegister(arg)
             return assembly+"bl printlnInteger\n", memory, data
 
 
@@ -54,10 +63,31 @@ def compileZegNa(toCompile, memory, data):
 
 # Returns string of assembly needed for this statement
 
+def compileStel(toCompile, memory, data, allRegisters):
+    if type(toCompile.args[1]) == Value:
+        register = getRegister(allRegisters, memory)
+        if type(toCompile.args[1].content) == str:
+            memory[toCompile.args[0].name] = register.upper() # this is really shitty, but the capital R denotes a register holding a string
+            assembly, data = stringtoRegister(toCompile.args[1], data, register.upper())
+            return assembly, memory, data
+        else:
+            memory[toCompile.args[0].name] = register
+            func, sign = ("mov", "#") if toCompile.args[1].content < 256 else (
+                "ldr", "=")
+            immed = sign + str(toCompile.args[1].content)
+            return f"{func} {register}, {immed}\n", memory, data
+
+
+def compileIf(toCompile, memory, data):
+    return            
+
 
 def compileExpression(toCompile: Expression, memory, data):
     allRegisters = ["r1", "r2", "r3", "r4", "r5", "r6", "r7"]
     funcToAssem = {"produceer": "mul", "stapel": "add", "verklein": "sub"}
+    if type(toCompile) == If:
+        return compileIf(toCompile, memory, data)
+
     match toCompile.function:
         case a if a in funcToAssem.keys():
             if type(toCompile.args[1]) == Value:
@@ -71,14 +101,7 @@ def compileExpression(toCompile: Expression, memory, data):
             # "memory" will store the location of the data, so a register name or a memory address
             return memAssem + f"{funcToAssem[a]} {memory[toCompile.args[0].name]}, {snd}, {memory[toCompile.args[0].name]}\n", memory, data
         case "stel":
-            if type(toCompile.args[1]) == Value:
-                func, sign = ("mov", "#") if toCompile.args[1].content < 256 else (
-                    "ldr", "=")
-                immed = sign + str(toCompile.args[1].content)
-                register = [
-                    x for x in allRegisters if x not in memory.values()][0]
-                memory[toCompile.args[0].name] = register
-                return f"{func} {register}, {immed}\n", memory, data
+            return compileStel(toCompile, memory, data, allRegisters)
         case "zeg_na":
             return compileZegNa(toCompile, memory, data)
         case _:

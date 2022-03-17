@@ -10,3 +10,10 @@ stapel n 4
 zeg_na n
 zeg_na "een" "twee" "drie"
 zeg_na 4
+
+stel n "en"
+zeg_na n
+
+indien a 0
+zeg_na "nul!"
+neidni

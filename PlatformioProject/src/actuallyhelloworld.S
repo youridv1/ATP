@@ -6,6 +6,7 @@
 LIT0: .asciz "een"
 LIT1: .asciz "twee"
 LIT2: .asciz "drie"
+LIT3: .asciz "en"
 
 .text
 .global youriMain
@@ -33,4 +34,7 @@ ldr r0, =LIT2
 bl printlnStr
 mov r0, #4
 bl printlnInteger
+ldr R6, =LIT3
+mov r0, R6
+bl printlnStr
 pop { r1, r2, r3, r4, r5, r6, r7, pc }
