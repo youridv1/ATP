@@ -1,19 +1,32 @@
-stel n 2
+// stel n 2
+// stel a 4
+// stel b 5
+// produceer n n 
+// produceer a b
+// verklein a n
+// stapel b n
+// produceer n 2
+// stapel n 4
+// zeg_na n
+// zeg_na "een" "twee" "drie"
+// zeg_na 4
+
+// stel n "en"
+// zeg_na n
+
+// zeg_na a
+// indien a 0
+// zeg_na "nul!"
+// neidni
+// indien a 2
+// zeg_na "twee!"
+// neidni
+
+
 stel a 4
-stel b 5
-produceer n n 
-produceer a b
-verklein a n
-stapel b n
-produceer n 2
-stapel n 4
-zeg_na n
-zeg_na "een" "twee" "drie"
-zeg_na 4
-
-stel n "en"
-zeg_na n
-
-indien a 0
-zeg_na "nul!"
-neidni
+zeg_na a
+lus
+verklein a 1
+zeg_na "what" // en commentaar werkt ook zo
+zeg_na a
+sul a 0

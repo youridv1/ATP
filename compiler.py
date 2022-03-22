@@ -82,7 +82,7 @@ def compileStel(toCompile, memory, data, allRegisters):
 def loadNameIfComponent(arg, memory):
   match arg:
     case Variable(name):
-      return "", memory[name]
+      return f"mov r1, {memory[name]}\n", "r1"
     case Value(_):
       assembly = intToRegister(arg)
       return assembly, "r0"
@@ -101,15 +101,37 @@ def compileIf(toCompile, memory, data):
     body, _, _ = compile(toCompile.body, memory, data)
     ifHex = secrets.token_hex(5)
     ifEnd = f"ifEnd_{ifHex}"
-    assembly = f"{comparison}BNE {ifEnd}\n{body}{ifEnd}:\n"
+    assembly = f"{comparison}bne {ifEnd}\n{body}{ifEnd}:\n"
     return assembly, memory, data
 
 
+def compileWhileComparison(toCompile, memory, data):
+    #load variable
+    lhsAssem, lhs = loadNameIfComponent(toCompile.Variable, memory)
+    #load value
+    rhsAssem, rhs = loadNameIfComponent(toCompile.Value, memory)
+    return lhsAssem + rhsAssem + f"cmp {rhs}, {lhs}\n"
+
+
+def compileLoop(toCompile, memory, data):
+    comparison = compileWhileComparison(toCompile, memory, data)
+    body, _, _ = compile(toCompile.body, memory, data)
+    whileHex = secrets.token_hex(5)
+    whileEnd = f"whileEnd_{whileHex}"
+    whileBegin = f"whileBegin_{whileHex}"
+    branch = f"beq {whileEnd}\n"
+    assembly = f"{whileBegin}:\n{comparison}{branch}{body}b {whileBegin}\n{whileEnd}:\n"
+    return assembly, memory, data
+
+
+
 def compileExpression(toCompile: Expression, memory, data):
-    allRegisters = ["r1", "r2", "r3", "r4", "r5", "r6", "r7"]
+    allRegisters = ["r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11"]
     funcToAssem = {"produceer": "mul", "stapel": "add", "verklein": "sub"}
     if type(toCompile) == If:
         return compileIf(toCompile, memory, data)
+    if type(toCompile) == Loop:
+        return compileLoop(toCompile, memory, data)
 
     match toCompile.function:
         case a if a in funcToAssem.keys():
@@ -122,7 +144,7 @@ def compileExpression(toCompile: Expression, memory, data):
                 memAssem = ""
                 snd = memory[toCompile.args[1].name]
             # "memory" will store the location of the data, so a register name or a memory address
-            return memAssem + f"{funcToAssem[a]} {memory[toCompile.args[0].name]}, {snd}, {memory[toCompile.args[0].name]}\n", memory, data
+            return memAssem + f"{funcToAssem[a]} {memory[toCompile.args[0].name]}, {memory[toCompile.args[0].name]}, {snd}\n", memory, data
         case "stel":
             return compileStel(toCompile, memory, data, allRegisters)
         case "zeg_na":
@@ -146,10 +168,11 @@ def compile(ast: list, memory: dict = {}, data: dict = {}):
 
 
 def mainCompiler(fileName: str):
-    push = "push { r1, r2, r3, r4, r5, r6, r7, lr }\n"
-    pop = "pop { r1, r2, r3, r4, r5, r6, r7, pc }\n"
     x = parse(lex(f"{fileName}.yo"))
-    compiledCode, _, data = compile(x)
+    compiledCode, memory, data = compile(x)
+    registerList = ", ".join(memory.values())
+    push = "push { " + registerList + ", lr }\n"
+    pop = "pop { " + registerList + ", pc }\n"
     print(x)
     print(data)
     dataSegment = compileData(data)

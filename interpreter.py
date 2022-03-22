@@ -39,7 +39,7 @@ def interpretExpression(exp: namedtuple, memory: dict):
         else:
             raise Exception("Onbekende functie. Eerst Definieren")
     elif exp.function == "zeg_na":
-        print(*map(lambda x: x[1:-1] if '"' in x else (memory[x] if type(memory[x]) == int else memory[x][1:-1]), exp.args))
+        print(*map(lambda x: x.content[1:-1] if type(x) == Value and '"' in x.content else (memory[x.name] if type(memory[x.name]) == int else memory[x.name][1:-1]), exp.args))
     elif exp.function == "stel":
         if exp.argc == 2:
             if type(exp.args[1]) == Value:

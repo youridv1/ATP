@@ -3,38 +3,27 @@
 
 .data
 
-LIT0: .asciz "een"
-LIT1: .asciz "twee"
-LIT2: .asciz "drie"
-LIT3: .asciz "en"
+LIT0: .asciz "what"
 
 .text
 .global youriMain
 
 youriMain:
-push { r1, r2, r3, r4, r5, r6, r7, lr }
-mov r1, #2
-mov r2, #4
-mov r3, #5
-mul r1, r1, r1
-mul r2, r3, r2
-sub r2, r1, r2
-add r3, r1, r3
-mov r4, #2
-mul r1, r4, r1
-mov r5, #4
-add r1, r5, r1
-mov r0, r1
+push { r4, r5, lr }
+mov r4, #4
+mov r0, r4
 bl printlnInteger
+whileBegin_5cfbee63bd:
+mov r1, r4
+mov r0, #0
+cmp r0, r1
+beq whileEnd_5cfbee63bd
+mov r5, #1
+sub r4, r4, r5
 ldr r0, =LIT0
 bl printlnStr
-ldr r0, =LIT1
-bl printlnStr
-ldr r0, =LIT2
-bl printlnStr
-mov r0, #4
+mov r0, r4
 bl printlnInteger
-ldr R6, =LIT3
-mov r0, R6
-bl printlnStr
-pop { r1, r2, r3, r4, r5, r6, r7, pc }
+b whileBegin_5cfbee63bd
+whileEnd_5cfbee63bd:
+pop { r4, r5, pc }
