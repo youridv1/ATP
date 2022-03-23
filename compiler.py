@@ -79,21 +79,18 @@ def compileStel(toCompile, memory, data, allRegisters):
             return f"{func} {register}, {immed}\n", memory, data
 
 
-def loadNameIfComponent(arg, memory):
+def loadNameIfComponent(arg, memory, register = "r0"):
   match arg:
-    case Variable(name):
-      return f"mov r1, {memory[name]}\n", "r1"
-    case Value(_):
-      assembly = intToRegister(arg)
-      return assembly, "r0"
+    case Variable(name): return f"mov {register}, {memory[name]}\n"
+    case Value(_): return intToRegister(arg, register)
 
 
 def compileComparison(toCompile, memory, data):
   #load lhs
-  lhsAssem, lhs = loadNameIfComponent(toCompile.LHS, memory)
+  lhsAssem = loadNameIfComponent(toCompile.LHS, memory)
   #load rhs
-  rhsAssem, rhs = loadNameIfComponent(toCompile.RHS, memory)
-  return lhsAssem + rhsAssem + f"cmp {lhs}, {rhs}\n"
+  rhsAssem = loadNameIfComponent(toCompile.RHS, memory, "r1")
+  return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
 
 def compileIf(toCompile, memory, data):
@@ -107,10 +104,10 @@ def compileIf(toCompile, memory, data):
 
 def compileWhileComparison(toCompile, memory, data):
     #load variable
-    lhsAssem, lhs = loadNameIfComponent(toCompile.Variable, memory)
+    lhsAssem = loadNameIfComponent(toCompile.Variable, memory)
     #load value
-    rhsAssem, rhs = loadNameIfComponent(toCompile.Value, memory)
-    return lhsAssem + rhsAssem + f"cmp {rhs}, {lhs}\n"
+    rhsAssem = loadNameIfComponent(toCompile.Value, memory, "r1")
+    return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
 
 def compileLoop(toCompile, memory, data):
@@ -124,6 +121,9 @@ def compileLoop(toCompile, memory, data):
     return assembly, memory, data
 
 
+def compileDefinition(toCompile, memory, data):
+    return
+
 
 def compileExpression(toCompile: Expression, memory, data):
     allRegisters = ["r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11"]
@@ -132,6 +132,8 @@ def compileExpression(toCompile: Expression, memory, data):
         return compileIf(toCompile, memory, data)
     if type(toCompile) == Loop:
         return compileLoop(toCompile, memory, data)
+    if type(toCompile) == Function:
+        return compileDefinition(toCompile, memory, data)
 
     match toCompile.function:
         case a if a in funcToAssem.keys():
@@ -167,13 +169,14 @@ def compile(ast: list, memory: dict = {}, data: dict = {}):
     return assembly+assembly2, memory, data
 
 
-def mainCompiler(fileName: str):
-    x = parse(lex(f"{fileName}.yo"))
-    compiledCode, memory, data = compile(x)
+def mainCompiler(fileName: str, ast: list):
+    if not ast:
+      ast = parse(lex(f"{fileName}.yo")) 
+    compiledCode, memory, data = compile(ast)
     registerList = ", ".join(memory.values())
     push = "push { " + registerList + ", lr }\n"
     pop = "pop { " + registerList + ", pc }\n"
-    print(x)
+    print(ast)
     print(data)
     dataSegment = compileData(data)
     fileBegin = beginFile(dataSegment)

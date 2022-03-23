@@ -30,3 +30,9 @@ verklein a 1
 zeg_na "what" // en commentaar werkt ook zo
 zeg_na a
 sul a 0
+
+definieer tweedeFunctie functiontwo
+definieer eersteFunctie function
+
+eersteFunctie youri "de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen"
+tweedeFunctie leeg "hallo vanuit hello world"
