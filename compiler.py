@@ -1,3 +1,6 @@
+from json.tool import main
+from multiprocessing.reduction import register
+import string
 from lex import lex
 from AST import Expression, Variable, Value, Loop, Function, Call, If, parse
 import sys
@@ -6,8 +9,8 @@ import secrets
 sys.setrecursionlimit(20000)  # core dumped at 21804
 
 
-def beginFile(dataSegment=""):
-    return f".cpu cortex-m0\n.align 2\n\n{dataSegment}.text\n.global youriMain\n\nyouriMain:\n"
+def beginFile(dataSegment="", fileName=""):
+    return f".cpu cortex-m0\n.align 2\n\n{dataSegment}.text\n.global {fileName}\n\n{fileName}:\n"
 
 
 def getRegister(allRegisters, memory):
@@ -30,7 +33,7 @@ def stringtoRegister(value: Value, data: dict, register: str = "r0"):
     return assembly, data
 
 
-def intToRegister(value, register = "r0"):
+def intToRegister(value, register="r0"):
     content = int(value.content)
     func, sign = ("mov", "#") if content < 256 else ("ldr", "=")
     assembly = f"{func} {register}, {sign}{content}\n"
@@ -41,7 +44,7 @@ def ZegNaHelper(arg, memory, data):
     match arg:
         case Variable(name):
             register = memory[name]
-            if register[0].isupper(): # again quite hacky, but very useful
+            if register[0].isupper():  # again quite hacky, but very useful
                 func = "printlnStr"
             else:
                 func = "printlnInteger"
@@ -64,33 +67,41 @@ def compileZegNa(toCompile, memory, data):
 
 # Returns string of assembly needed for this statement
 
+
 def compileStel(toCompile, memory, data, allRegisters):
-    if type(toCompile.args[1]) == Value:
+    if len(toCompile.args) < 3:
+        if type(toCompile.args[1]) == Value:
+            register = getRegister(allRegisters, memory)
+            if type(toCompile.args[1].content) == str:
+                # this is really shitty, but the capital R denotes a register holding a string
+                memory[toCompile.args[0].name] = register.upper()
+                assembly, data = stringtoRegister(
+                    toCompile.args[1], data, register.upper())
+                return assembly, memory, data
+            else:
+                memory[toCompile.args[0].name] = register
+                func, sign = ("mov", "#") if toCompile.args[1].content < 256 else (
+                    "ldr", "=")
+                immed = sign + str(toCompile.args[1].content)
+                return f"{func} {register}, {immed}\n", memory, data
+    else:
         register = getRegister(allRegisters, memory)
-        if type(toCompile.args[1].content) == str:
-            memory[toCompile.args[0].name] = register.upper() # this is really shitty, but the capital R denotes a register holding a string
-            assembly, data = stringtoRegister(toCompile.args[1], data, register.upper())
-            return assembly, memory, data
-        else:
-            memory[toCompile.args[0].name] = register
-            func, sign = ("mov", "#") if toCompile.args[1].content < 256 else (
-                "ldr", "=")
-            immed = sign + str(toCompile.args[1].content)
-            return f"{func} {register}, {immed}\n", memory, data
+        memory[toCompile.args[0].name] = register
+        return f"mov {register}, r{toCompile.args[2].content}\n", memory, data
 
 
-def loadNameIfComponent(arg, memory, register = "r0"):
-  match arg:
-    case Variable(name): return f"mov {register}, {memory[name]}\n"
-    case Value(_): return intToRegister(arg, register)
+def loadNameIfComponent(arg, memory, register="r0"):
+    match arg:
+        case Variable(name): return f"mov {register}, {memory[name]}\n"
+        case Value(_): return intToRegister(arg, register)
 
 
 def compileComparison(toCompile, memory, data):
-  #load lhs
-  lhsAssem = loadNameIfComponent(toCompile.LHS, memory)
-  #load rhs
-  rhsAssem = loadNameIfComponent(toCompile.RHS, memory, "r1")
-  return lhsAssem + rhsAssem + "cmp r0, r1\n"
+    # load lhs
+    lhsAssem = loadNameIfComponent(toCompile.LHS, memory)
+    # load rhs
+    rhsAssem = loadNameIfComponent(toCompile.RHS, memory, "r1")
+    return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
 
 def compileIf(toCompile, memory, data):
@@ -103,9 +114,9 @@ def compileIf(toCompile, memory, data):
 
 
 def compileWhileComparison(toCompile, memory, data):
-    #load variable
+    # load variable
     lhsAssem = loadNameIfComponent(toCompile.Variable, memory)
-    #load value
+    # load value
     rhsAssem = loadNameIfComponent(toCompile.Value, memory, "r1")
     return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
@@ -121,8 +132,20 @@ def compileLoop(toCompile, memory, data):
     return assembly, memory, data
 
 
-def compileDefinition(toCompile, memory, data):
-    return
+def compileDefinition(toCompile):
+    mainCompiler(toCompile.name, toCompile.body)
+
+
+def compileCall(toCompile: Call, memory, data, allRegisters):
+    if toCompile.argc == 1:
+        argument1, data = stringtoRegister(toCompile.args[0], data)
+    if toCompile.result != "leeg":
+        register = getRegister(allRegisters, memory)
+        memory[toCompile.result] = register
+        resultAssembly = f"mov r0, {register}\n"
+    callAssembly = f"bl {toCompile.name}\n"
+    return f"{argument1}{callAssembly}{resultAssembly}", memory, data
+    
 
 
 def compileExpression(toCompile: Expression, memory, data):
@@ -133,7 +156,10 @@ def compileExpression(toCompile: Expression, memory, data):
     if type(toCompile) == Loop:
         return compileLoop(toCompile, memory, data)
     if type(toCompile) == Function:
-        return compileDefinition(toCompile, memory, data)
+        compileDefinition(toCompile)
+        return f"@definition of {toCompile.name} was performed\n", memory, data
+    if type(toCompile) == Call:
+        return compileCall(toCompile, memory, data, allRegisters)
 
     match toCompile.function:
         case a if a in funcToAssem.keys():
@@ -162,6 +188,8 @@ def compileData(data):
 
 
 def compile(ast: list, memory: dict = {}, data: dict = {}):
+    if not memory:
+        memory = {"result": "r0"}
     assembly, memory, data = compileExpression(ast[0], memory, data)
     assembly2 = ""
     if rest := ast[1:]:
@@ -169,21 +197,23 @@ def compile(ast: list, memory: dict = {}, data: dict = {}):
     return assembly+assembly2, memory, data
 
 
-def mainCompiler(fileName: str, ast: list):
+def mainCompiler(fileName: str, ast: list = []):
     if not ast:
-      ast = parse(lex(f"{fileName}.yo")) 
-    compiledCode, memory, data = compile(ast)
-    registerList = ", ".join(memory.values())
-    push = "push { " + registerList + ", lr }\n"
-    pop = "pop { " + registerList + ", pc }\n"
+        ast = parse(lex(f"{fileName}.yo"))
+    compiledCode, memory, data = compile(ast, {}, {})
+    registerList = memory.values()
+    exceptedRegisters = ["r0", "r1", "r2", "r3"]
+    popPushRegisters = ", ".join([x for x in registerList if x not in exceptedRegisters])
+    push = "push { " + popPushRegisters + ", lr }\n"
+    pop = "pop { " + popPushRegisters + ", pc }\n"
     print(ast)
     print(data)
     dataSegment = compileData(data)
-    fileBegin = beginFile(dataSegment)
+    fileBegin = beginFile(dataSegment, fileName)
     with open(f"{fileName}.S", 'w') as f:
         f.write(fileBegin + push + compiledCode + pop)
 
 
 if __name__ == "__main__":
-    fileName = "actuallyhelloworld"
+    fileName = "youriMain"
     mainCompiler(fileName)

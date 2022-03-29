@@ -28,6 +28,7 @@ zeg_na a
 lus
 verklein a 1
 zeg_na "what" // en commentaar werkt ook zo
+zeg_na "what2"
 zeg_na a
 sul a 0
 

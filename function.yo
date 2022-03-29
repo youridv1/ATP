@@ -3,4 +3,4 @@
 stel result 21
 stel param args 0
 zeg_na param
-tweedeFunctie leeg " hallo vanuit function "
+// tweedeFunctie leeg " hallo vanuit function "
