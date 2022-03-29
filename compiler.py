@@ -45,16 +45,16 @@ def ZegNaHelper(arg, memory, data):
         case Variable(name):
             register = memory[name]
             if register[0].isupper():  # again quite hacky, but very useful
-                func = "printlnStr"
+                func = "smartPrint"
             else:
-                func = "printlnInteger"
+                func = "smartPrint"
             return f"mov r0, {register}\nbl {func}\n", memory, data
         case Value(content):
             if '"' in content:
                 assembly, data = stringtoRegister(arg, data)
-                return assembly+"bl printlnStr\n", memory, data
+                return assembly+"bl smartPrint\n", memory, data
             assembly = intToRegister(arg)
-            return assembly+"bl printlnInteger\n", memory, data
+            return assembly+"bl smartPrint\n", memory, data
 
 
 def compileZegNa(toCompile, memory, data):
@@ -138,11 +138,16 @@ def compileDefinition(toCompile):
 
 def compileCall(toCompile: Call, memory, data, allRegisters):
     if toCompile.argc == 1:
-        argument1, data = stringtoRegister(toCompile.args[0], data)
-    if toCompile.result != "leeg":
+        if '"' in toCompile.args[0].content:
+            argument1, data = stringtoRegister(toCompile.args[0], data)
+        else:
+            argument1 = intToRegister(toCompile.args[0])
+    if toCompile.result:
         register = getRegister(allRegisters, memory)
         memory[toCompile.result] = register
         resultAssembly = f"mov r0, {register}\n"
+    else:
+        resultAssembly = ""
     callAssembly = f"bl {toCompile.name}\n"
     return f"{argument1}{callAssembly}{resultAssembly}", memory, data
     

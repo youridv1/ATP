@@ -37,3 +37,5 @@ definieer eersteFunctie function
 
 eersteFunctie youri "de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen"
 tweedeFunctie leeg "hallo vanuit hello world"
+
+tweedeFunctie leeg 23
