@@ -150,6 +150,13 @@ def compileCall(toCompile: Call, memory, data, allRegisters):
         resultAssembly = ""
     callAssembly = f"bl {toCompile.name}\n"
     return f"{argument1}{callAssembly}{resultAssembly}", memory, data
+
+def compileVerdeel(toCompile: Expression, memory: dict):
+    # load lhs
+    lhsAssem = loadNameIfComponent(toCompile.args[0], memory)
+    # load rhs
+    rhsAssem = loadNameIfComponent(toCompile.args[1], memory, "r1")
+    return lhsAssem + rhsAssem + "bl divide\n"
     
 
 
@@ -182,6 +189,8 @@ def compileExpression(toCompile: Expression, memory, data):
             return compileStel(toCompile, memory, data, allRegisters)
         case "zeg_na":
             return compileZegNa(toCompile, memory, data)
+        case "verdeel":
+            return compileVerdeel(toCompile, memory), memory, data
         case _:
             print(":(")
             return

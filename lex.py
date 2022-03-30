@@ -8,7 +8,7 @@ def genToken(w: str):
     """
     Gets token out of word
     """
-    builtins = ["zeg_na", "stel", "stapel", "verklein", "definieer", "produceer"]
+    builtins = ["zeg_na", "stel", "stapel", "verklein", "definieer", "produceer", "verdeel"]
     operators = ["in"]
     if w in builtins:
         return Token("BuiltIn", w)
@@ -37,9 +37,15 @@ class Token:
     def __repr__(self):
         return "[" + self.type + ", " + self.text + "]"
 
+def ifNotDecorator(func):
+    def inner(toLex):
+        if not toLex:
+            return ("","")
+        return func(toLex)
+    return inner
+
+@ifNotDecorator
 def lexString(toLex: str): # -> (str, str)
-    if not toLex:
-        return ("","")
     head, *tail = toLex
     if head != '"':
         string, rest = lexString(tail)
@@ -47,9 +53,8 @@ def lexString(toLex: str): # -> (str, str)
     else:
         return (head, tail)
 
+@ifNotDecorator
 def lexToken(toLex: str):
-    if not toLex:
-        return ("","")
     head, *tail = toLex
     if head != " ":
         string, rest = lexToken(tail)
