@@ -40,3 +40,11 @@ zeg_na b
 stel y 2
 produceer y y 
 zeg_na y
+
+
+stel test 24
+lus
+zeg_na "test" test
+verklein test 1
+verklein test 1
+sul test 0

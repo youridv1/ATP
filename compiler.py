@@ -1,24 +1,28 @@
-from json.tool import main
-from multiprocessing.reduction import register
-import string
-from lex import lex
-from AST import Expression, Variable, Value, Loop, Function, Call, If, parse
 import sys
 import secrets
+from lex import lex
+from typing import *
+from interpreter import InterpretType
+from AST import Expression, Variable, Value, Loop, Function, Call, If, parse, ASTType
 
 sys.setrecursionlimit(20000)  # core dumped at 21804
 
+DataSegmentType = Dict[str, str]
+Register        = str
+VariableName    = str
+CompMemType     = Dict[VariableName, Register]
+AsmCode         = str
 
-def beginFile(dataSegment="", fileName=""):
+def beginFile(dataSegment: DataSegmentType = "", fileName: str = "") -> str:
     return f".cpu cortex-m0\n.align 2\n\n{dataSegment}.text\n.global {fileName}\n\n{fileName}:\n"
 
 
-def getRegister(allRegisters, memory):
+def getRegister(allRegisters: List[Register], memory: CompMemType) -> List[Register]:
     return [x for x in allRegisters if x.lower() not in memory.values() and x.upper() not in memory.values()][0]
 
 
 # puts an inline value in an available register
-def valueToRegister(value: Value, memory: dict, allRegisters: list):
+def valueToRegister(value: Value, memory: CompMemType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType]:
     register = getRegister(allRegisters, memory)
     func, sign = ("mov", "#") if value.content < 256 else ("ldr", "=")
     assembly = f"{func} {register}, {sign}{value.content}\n"
@@ -26,21 +30,21 @@ def valueToRegister(value: Value, memory: dict, allRegisters: list):
     return assembly, memory
 
 
-def stringtoRegister(value: Value, data: dict, register: str = "r0"):
+def stringtoRegister(value: Value, data: DataSegmentType, register: Register = "r0") -> Tuple[AsmCode, DataSegmentType]:
     key = f"LIT{len(data)}"
     data[key] = value.content
     assembly = f"ldr {register}, ={key}\n"
     return assembly, data
 
 
-def intToRegister(value, register="r0"):
+def intToRegister(value: Value, register: Register="r0") -> AsmCode:
     content = int(value.content)
     func, sign = ("mov", "#") if content < 256 else ("ldr", "=")
     assembly = f"{func} {register}, {sign}{content}\n"
     return assembly
 
 
-def ZegNaHelper(arg, memory, data):
+def ZegNaHelper(arg: Union[Value, Variable], memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     match arg:
         case Variable(name):
             register = memory[name]
@@ -57,7 +61,7 @@ def ZegNaHelper(arg, memory, data):
             return assembly+"bl smartPrint\n", memory, data
 
 
-def compileZegNa(toCompile, memory, data):
+def compileZegNa(toCompile: Expression, memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     assembly, memory, data = ZegNaHelper(toCompile.args[0], memory, data)
     assembly2 = ""
     if rest := toCompile.args[1:]:
@@ -68,7 +72,7 @@ def compileZegNa(toCompile, memory, data):
 # Returns string of assembly needed for this statement
 
 
-def compileStel(toCompile, memory, data, allRegisters):
+def compileStel(toCompile: Expression, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     if len(toCompile.args) < 3:
         if type(toCompile.args[1]) == Value:
             register = getRegister(allRegisters, memory)
@@ -90,13 +94,13 @@ def compileStel(toCompile, memory, data, allRegisters):
         return f"mov {register}, r{toCompile.args[2].content}\n", memory, data
 
 
-def loadNameIfComponent(arg, memory, register="r0"):
+def loadNameIfComponent(arg: Union[Variable, Value], memory: CompMemType, register: Register="r0") -> AsmCode:
     match arg:
         case Variable(name): return f"mov {register}, {memory[name]}\n"
         case Value(_): return intToRegister(arg, register)
 
 
-def compileComparison(toCompile, memory, data):
+def compileComparison(toCompile: If, memory: CompMemType) -> AsmCode:
     # load lhs
     lhsAssem = loadNameIfComponent(toCompile.LHS, memory)
     # load rhs
@@ -104,7 +108,7 @@ def compileComparison(toCompile, memory, data):
     return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
 
-def compileIf(toCompile, memory, data):
+def compileIf(toCompile: If, memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     comparison = compileComparison(toCompile, memory, data)
     body, _, _ = compile(toCompile.body, memory, data)
     ifHex = secrets.token_hex(5)
@@ -113,7 +117,7 @@ def compileIf(toCompile, memory, data):
     return assembly, memory, data
 
 
-def compileWhileComparison(toCompile, memory, data):
+def compileWhileComparison(toCompile: Loop, memory: CompMemType) -> AsmCode:
     # load variable
     lhsAssem = loadNameIfComponent(toCompile.Variable, memory)
     # load value
@@ -121,8 +125,8 @@ def compileWhileComparison(toCompile, memory, data):
     return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
 
-def compileLoop(toCompile, memory, data):
-    comparison = compileWhileComparison(toCompile, memory, data)
+def compileLoop(toCompile: Loop, memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
+    comparison = compileWhileComparison(toCompile, memory)
     body, _, _ = compile(toCompile.body, memory, data)
     whileHex = secrets.token_hex(5)
     whileEnd = f"whileEnd_{whileHex}"
@@ -132,11 +136,11 @@ def compileLoop(toCompile, memory, data):
     return assembly, memory, data
 
 
-def compileDefinition(toCompile):
+def compileDefinition(toCompile: Function) -> None:
     mainCompiler(toCompile.name, toCompile.body)
 
 
-def compileCall(toCompile: Call, memory, data, allRegisters):
+def compileCall(toCompile: Call, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     if toCompile.argc == 1:
         if '"' in toCompile.args[0].content:
             argument1, data = stringtoRegister(toCompile.args[0], data)
@@ -151,7 +155,7 @@ def compileCall(toCompile: Call, memory, data, allRegisters):
     callAssembly = f"bl {toCompile.name}\n"
     return f"{argument1}{callAssembly}{resultAssembly}", memory, data
 
-def compileVerdeel(toCompile: Expression, memory: dict):
+def compileVerdeel(toCompile: Expression, memory: CompMemType) -> AsmCode:
     # load lhs
     lhsAssem = loadNameIfComponent(toCompile.args[0], memory)
     # load rhs
@@ -160,48 +164,46 @@ def compileVerdeel(toCompile: Expression, memory: dict):
     
 
 
-def compileExpression(toCompile: Expression, memory, data):
+def compileExpression(toCompile: InterpretType, memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     allRegisters = ["r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11"]
     funcToAssem = {"produceer": "mul", "stapel": "add", "verklein": "sub"}
-    if type(toCompile) == If:
-        return compileIf(toCompile, memory, data)
-    if type(toCompile) == Loop:
-        return compileLoop(toCompile, memory, data)
-    if type(toCompile) == Function:
-        compileDefinition(toCompile)
-        return f"@definition of {toCompile.name} was performed\n", memory, data
-    if type(toCompile) == Call:
-        return compileCall(toCompile, memory, data, allRegisters)
-
-    match toCompile.function:
-        case a if a in funcToAssem.keys():
+    match toCompile:
+        case If(_, _, _):
+            return compileIf(toCompile, memory, data)
+        case Loop(_, _, _):
+            return compileLoop(toCompile, memory, data)
+        case Function(_, _):
+            compileDefinition(toCompile)
+            return f"@definition of {toCompile.name} was performed\n", memory, data
+        case Call(_, _, _, _):
+            return compileCall(toCompile, memory, data, allRegisters)
+        case Expression(a, _, _) if a in funcToAssem.keys():
             if type(toCompile.args[1]) == Value:
                 memAssem, memory = valueToRegister(
                     toCompile.args[1], memory, allRegisters)
                 snd = memory[toCompile.args[1].content]
-            else:  # variable
-                # for now we assume nothing ends up in memory and everything fits into registers
+            else:
                 memAssem = ""
                 snd = memory[toCompile.args[1].name]
             # "memory" will store the location of the data, so a register name or a memory address
             return memAssem + f"{funcToAssem[a]} {memory[toCompile.args[0].name]}, {memory[toCompile.args[0].name]}, {snd}\n", memory, data
-        case "stel":
+        case Expression("stel", _, _):
             return compileStel(toCompile, memory, data, allRegisters)
-        case "zeg_na":
+        case Expression("zeg_na",_ ,_):
             return compileZegNa(toCompile, memory, data)
-        case "verdeel":
+        case Expression("verdeel", _,_):
             return compileVerdeel(toCompile, memory), memory, data
         case _:
             print(":(")
             return
 
 
-def compileData(data):
+def compileData(data: DataSegmentType) -> str:
     bruh = [f"{key}: .asciz {value}\n" for key, value in data.items()]
     return ".data\n\n" + "".join(bruh) + "\n"
 
 
-def compile(ast: list, memory: dict = {}, data: dict = {}):
+def compile(ast: ASTType, memory: CompMemType = {}, data: DataSegmentType = {}) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     if not memory:
         memory = {"result": "r0"}
     assembly, memory, data = compileExpression(ast[0], memory, data)
@@ -211,7 +213,7 @@ def compile(ast: list, memory: dict = {}, data: dict = {}):
     return assembly+assembly2, memory, data
 
 
-def mainCompiler(fileName: str, ast: list = []):
+def mainCompiler(fileName: str, ast: ASTType = []) -> None:
     if not ast:
         ast = parse(lex(f"{fileName}.yo"))
     compiledCode, memory, data = compile(ast, {}, {})
@@ -220,8 +222,6 @@ def mainCompiler(fileName: str, ast: list = []):
     popPushRegisters = ", ".join([x for x in registerList if x not in exceptedRegisters])
     push = "push { " + popPushRegisters + ", lr }\n"
     pop = "pop { " + popPushRegisters + ", pc }\n"
-    print(ast)
-    print(data)
     dataSegment = compileData(data)
     fileBegin = beginFile(dataSegment, fileName)
     with open(f"{fileName}.S", 'w') as f:

@@ -1,15 +1,51 @@
+from ast import AST
 from collections import namedtuple
-from lex import lex
+from dataclasses import dataclass
+from lex import lex, Token
+from typing import *
 
-Expression = namedtuple("Expression", ["function", "argc", "args"])
-Variable = namedtuple("Variable", ["name"])
-Value = namedtuple("Value", ["content"])
-Loop = namedtuple("Loop", ["body", "Variable", "Value"])
-If = namedtuple("If", ["body", "LHS", "RHS"])
-Function = namedtuple("Function", ["name", "body"])
-Call = namedtuple("Call", ["name", "result", "argc", "args"])
+# Circular type dependency, so commented out.
+# My AST contains Functions, Calls, Ifs, Loops and Expressions, but Function and If contain an ASTType
+ASTType = List #[Union[Function, Call, If, Loop, Expression]]
 
-def parseStel(tokensLine: list, variables: list):
+@dataclass
+class Variable:
+    name: str
+
+@dataclass
+class Value:
+    content: Union[str, int]
+@dataclass
+class Call:
+    name: str
+    result: str
+    argc: int
+    args: List[Value | Variable]
+
+@dataclass
+class Expression:
+    function: str
+    argc: int 
+    args: List[Variable | Value]
+
+@dataclass
+class Loop:
+    body: ASTType
+    Variable: Variable
+    Value: Value
+
+@dataclass
+class If:
+    LHS: Variable
+    RHS: Value
+
+@dataclass
+class Function:
+    name: str
+    body: ASTType
+
+
+def parseStel(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
     if len(tokensLine) == 3:
         if tokensLine[1].type == "Identifier":
             if tokensLine[2].type == "Number":
@@ -38,7 +74,7 @@ def parseStel(tokensLine: list, variables: list):
     else:
         raise Exception("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))
 
-def parseMathStatement(tokensLine: list, variables: list):
+def parseMathStatement(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
     if len(tokensLine) == 3:
         if tokensLine[1].type == "Identifier":
             if tokensLine[1].text in variables:
@@ -58,7 +94,7 @@ def parseMathStatement(tokensLine: list, variables: list):
     else:
         raise Exception("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
 
-def parseDefinition(tokensLine: list, variables: list):
+def parseDefinition(tokensLine: List[Token], variables: List[str]) -> Tuple[Function, List[str]]:
     if len(tokensLine) == 3:
         if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
             tmp = list(filter(lambda x: x[-1] == '~', variables))
@@ -69,7 +105,7 @@ def parseDefinition(tokensLine: list, variables: list):
     else:
         raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
 
-def parseFunctionCall(tokensLine: list, variables: list):
+def parseFunctionCall(tokensLine: List[Token], variables: List[str]) -> Tuple[Call, List[str]]:
     if tokensLine[0].text + '~' in variables:
         if all(map(lambda x: True if x.type == "String" or x.type == "Number" else (True if x.text in variables else False), tokensLine[2:])):
             if tokensLine[1].type == "Identifier" and tokensLine[1].text == "leeg":
@@ -83,22 +119,14 @@ def parseFunctionCall(tokensLine: list, variables: list):
     else:
         raise Exception("Functie niet gedefinieerd")
 
-def parseZegNa(tokensLine: list, variables: list):
+def parseZegNa(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
     return Expression(("zeg_na"), len(tokensLine[1:]), [Variable(x.text) if x.type == "Identifier" else Value(x.text) for x in tokensLine[1:]]), variables
 
 
-#TO DO
-#Error klasse maken prolly enum 
-def parseLine(tokensLine: list, variables: list):
+def parseLine(tokensLine: List[Token], variables: List[str]) -> Tuple[Union[Expression, Call, Function], List[str]]:
     if tokensLine[0].type == "BuiltIn":
         if tokensLine[0].text == "zeg_na":
-            # TO DO:
-            # Check if arguments are strings ( all )
-            # Implement alternative for when argument is variable name
-            # Error thingie
             return parseZegNa(tokensLine, variables)
-        # TO DO:
-        # Make it so the value of one variable can be assigned to another directly
         if tokensLine[0].text == "stel":
             return parseStel(tokensLine, variables)   
         elif tokensLine[0].text in ["stapel", "verklein", "verdeel", "produceer"]:
@@ -111,7 +139,7 @@ def parseLine(tokensLine: list, variables: list):
         raise Exception("First token can only be of type BuiltIn or Identifier")
                  
 
-def parseLoop(tokens: list, variables: list):  
+def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str]]:  
     body = parse(tokens[1:-1], variables)
     if len(tokens[-1]) < 2:
         return Loop(body, None, None), variables
@@ -125,7 +153,7 @@ def parseLoop(tokens: list, variables: list):
         else:
             raise Exception("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
 
-def parseIf(tokens: list, variables: list):
+def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
     body = parse(tokens[1:-1], variables) 
     if len(tokens[0]) == 3:
         if tokens[0][1].type == "Identifier":
@@ -147,7 +175,7 @@ def parseIf(tokens: list, variables: list):
         raise Exception("If needs two arguments to compare")
 
 
-def parse(tokens: list, variables = None):
+def parse(tokens: List[Token], variables: List[str] = None) -> ASTType:
     if not tokens:
         return []
     if variables == None:
