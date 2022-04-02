@@ -23,10 +23,9 @@ def getRegister(allRegisters: List[Register], memory: CompMemType) -> List[Regis
 
 # puts an inline value in an available register
 def valueToRegister(value: Value, memory: CompMemType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType]:
-    register = getRegister(allRegisters, memory)
+    register = "r0"
     func, sign = ("mov", "#") if value.content < 256 else ("ldr", "=")
     assembly = f"{func} {register}, {sign}{value.content}\n"
-    memory[value.content] = register
     return assembly, memory
 
 
@@ -88,6 +87,8 @@ def compileStel(toCompile: Expression, memory: CompMemType, data: DataSegmentTyp
                     "ldr", "=")
                 immed = sign + str(toCompile.args[1].content)
                 return f"{func} {register}, {immed}\n", memory, data
+        else:
+            return f"mov {memory[toCompile.args[0].name]}, {memory[toCompile.args[1].name]}\n", memory, data
     else:
         register = getRegister(allRegisters, memory)
         memory[toCompile.args[0].name] = register
@@ -109,7 +110,7 @@ def compileComparison(toCompile: If, memory: CompMemType) -> AsmCode:
 
 
 def compileIf(toCompile: If, memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
-    comparison = compileComparison(toCompile, memory, data)
+    comparison = compileComparison(toCompile, memory)
     body, _, _ = compile(toCompile.body, memory, data)
     ifHex = secrets.token_hex(5)
     ifEnd = f"ifEnd_{ifHex}"
@@ -142,14 +143,18 @@ def compileDefinition(toCompile: Function) -> None:
 
 def compileCall(toCompile: Call, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     if toCompile.argc == 1:
-        if '"' in toCompile.args[0].content:
-            argument1, data = stringtoRegister(toCompile.args[0], data)
-        else:
-            argument1 = intToRegister(toCompile.args[0])
+        match toCompile.args[0]:
+            case Value(_):
+                if '"' in toCompile.args[0].content:
+                    argument1, data = stringtoRegister(toCompile.args[0], data)
+                else:
+                    argument1 = intToRegister(toCompile.args[0])
+            case Variable(name):
+                argument1 = f"mov r0, {memory[name]}\n"
     if toCompile.result:
         register = getRegister(allRegisters, memory)
         memory[toCompile.result] = register
-        resultAssembly = f"mov r0, {register}\n"
+        resultAssembly = f"mov {register}, r0\n"
     else:
         resultAssembly = ""
     callAssembly = f"bl {toCompile.name}\n"
@@ -181,7 +186,7 @@ def compileExpression(toCompile: InterpretType, memory: CompMemType, data: DataS
             if type(toCompile.args[1]) == Value:
                 memAssem, memory = valueToRegister(
                     toCompile.args[1], memory, allRegisters)
-                snd = memory[toCompile.args[1].content]
+                snd = "r0"
             else:
                 memAssem = ""
                 snd = memory[toCompile.args[1].name]
@@ -200,12 +205,14 @@ def compileExpression(toCompile: InterpretType, memory: CompMemType, data: DataS
 
 def compileData(data: DataSegmentType) -> str:
     bruh = [f"{key}: .asciz {value}\n" for key, value in data.items()]
-    return ".data\n\n" + "".join(bruh) + "\n"
+    if bruh:
+        return ".data\n\n" + "".join(bruh) + "\n"
+    return ""
 
 
 def compile(ast: ASTType, memory: CompMemType = {}, data: DataSegmentType = {}) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     if not memory:
-        memory = {"result": "r0"}
+        memory = {}
     assembly, memory, data = compileExpression(ast[0], memory, data)
     assembly2 = ""
     if rest := ast[1:]:
@@ -219,13 +226,22 @@ def mainCompiler(fileName: str, ast: ASTType = []) -> None:
     compiledCode, memory, data = compile(ast, {}, {})
     registerList = memory.values()
     exceptedRegisters = ["r0", "r1", "r2", "r3"]
-    popPushRegisters = ", ".join([x for x in registerList if x not in exceptedRegisters])
-    push = "push { " + popPushRegisters + ", lr }\n"
-    pop = "pop { " + popPushRegisters + ", pc }\n"
+    popPushRegisters = sorted([x for x in registerList if x not in exceptedRegisters])
+    popPushRegisterString = ", ".join(popPushRegisters)
+
+    entryList = memory.keys()
+    if "result" in entryList:
+        result = memory["result"]
+        returnStatement = f"mov r0, {result}\n"
+    else:
+        returnStatement = ""
+
+    push = "push { " + popPushRegisterString + ", lr }\n"
+    pop = "pop { " + popPushRegisterString + ", pc }\n"
     dataSegment = compileData(data)
     fileBegin = beginFile(dataSegment, fileName)
     with open(f"{fileName}.S", 'w') as f:
-        f.write(fileBegin + push + compiledCode + pop)
+        f.write(fileBegin + push + compiledCode + returnStatement + pop)
 
 
 if __name__ == "__main__":

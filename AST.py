@@ -67,7 +67,7 @@ def parseStel(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression
             if tokensLine[3].type == "Number":
                 # TO DO:
                 # check if name is identifier
-                return Expression("stel", len(tokensLine[1:]), [Variable(tokensLine[1].text), Variable(tokensLine[2].text), Value(int(tokensLine[3].text))]), variables
+                return Expression("stel", len(tokensLine[1:]), [Variable(tokensLine[1].text), Variable(tokensLine[2].text), Value(int(tokensLine[3].text))]), variables+[tokensLine[1].text]
             else:
                 raise Exception("Only tokens of type Number can be used as an index, got %s instead" % tokensLine[3].type)
         else:
@@ -107,18 +107,15 @@ def parseDefinition(tokensLine: List[Token], variables: List[str]) -> Tuple[Func
         raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
 
 def parseFunctionCall(tokensLine: List[Token], variables: List[str]) -> Tuple[Call, List[str]]:
-    if tokensLine[0].text + '~' in variables:
-        if all(map(lambda x: True if x.type == "String" or x.type == "Number" else (True if x.text in variables else False), tokensLine[2:])):
-            if tokensLine[1].type == "Identifier" and tokensLine[1].text == "leeg":
-                return Call(tokensLine[0].text, None, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables
-            elif tokensLine[1].type == "Identifier" and tokensLine[1].text not in variables:
-                return Call(tokensLine[0].text, tokensLine[1].text, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables+[tokensLine[1].text]
-            else:
-                raise Exception("Een functie Call verwacht een ongebruikte naam voor de teruggave of 'leeg'")
+    if all(map(lambda x: True if x.type == "String" or x.type == "Number" else (True if x.text in variables else False), tokensLine[2:])):
+        if tokensLine[1].type == "Identifier" and tokensLine[1].text == "leeg":
+            return Call(tokensLine[0].text, None, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables
+        elif tokensLine[1].type == "Identifier" and tokensLine[1].text not in variables:
+            return Call(tokensLine[0].text, tokensLine[1].text, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables+[tokensLine[1].text]
         else:
-            raise Exception("Only strings, numbers or known variable names are allowed as an Argument")
+            raise Exception("Een functie Call verwacht een ongebruikte naam voor de teruggave of 'leeg'")
     else:
-        raise Exception("Functie niet gedefinieerd")
+        raise Exception("Only strings, numbers or known variable names are allowed as an Argument")
 
 def parseZegNa(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
     return Expression(("zeg_na"), len(tokensLine[1:]), [Variable(x.text) if x.type == "Identifier" else Value(x.text) for x in tokensLine[1:]]), variables

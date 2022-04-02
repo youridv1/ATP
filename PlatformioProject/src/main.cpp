@@ -49,6 +49,7 @@ void setup()
 {
   serialBegin();       // Needed to be able to print to serial monitor
   printlnStr("Start"); // debug
+  Sleep(1000);
   youriMain();         // start the code compiled by compiler.py
   printlnStr("End");   // debug
 }
