@@ -7,11 +7,11 @@ from AST import Expression, Variable, Value, Loop, Function, Call, If, parse, AS
 
 sys.setrecursionlimit(20000)  # core dumped at 21804
 
-DataSegmentType = Dict[str, str]
 Register        = str
 VariableName    = str
-CompMemType     = Dict[VariableName, Register]
 AsmCode         = str
+DataSegmentType = Dict[str, str]
+CompMemType     = Dict[VariableName, Register]
 
 def beginFile(dataSegment: DataSegmentType = "", fileName: str = "") -> str:
     return f".cpu cortex-m0\n.align 2\n\n{dataSegment}.text\n.global {fileName}\n\n{fileName}:\n"

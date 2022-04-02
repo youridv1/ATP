@@ -36,6 +36,7 @@ class Loop:
 
 @dataclass
 class If:
+    body: ASTType
     LHS: Variable
     RHS: Value
 
