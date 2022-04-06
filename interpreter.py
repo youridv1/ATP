@@ -6,10 +6,16 @@ from typing import *
 MemType = Dict[str, Union[str, int, List[Union[Function, Call, If, Loop, Expression]], List[Union[str, int]]]]
 InterpretType = Union[If, Loop, Call, Function, Expression]
 
+
+def IfLoopArgExtractor(x: Union[Variable, Value], memory: MemType): 
+    return int(x.content) if type(x) == Value else int(memory[x.name])
+
 # interpretLoop :: InterpretType -> MemType -> MemType
 def interpretLoop(exp: InterpretType, memory: MemType) -> MemType:
     '''Interpret a loop and return new memory'''
-    if not memory[exp.Variable.name] == exp.Value.content:
+    LHS = IfLoopArgExtractor(exp.LHS, memory)
+    RHS = IfLoopArgExtractor(exp.RHS, memory)
+    if LHS != RHS:
         memory = interpret(exp.body, memory)
         return interpretLoop(exp, memory)
     else:
@@ -18,9 +24,8 @@ def interpretLoop(exp: InterpretType, memory: MemType) -> MemType:
 # interpretIf :: If -> MemType -> MemType
 def interpretIf(exp: If, memory: MemType) -> MemType:
     '''Interpret an If and return new memory'''
-    extractor = lambda x: int(x.content) if type(x) == Value else int(memory[x.name])
-    LHS = extractor(exp.LHS)
-    RHS = extractor(exp.RHS)
+    LHS = IfLoopArgExtractor(exp.LHS, memory)
+    RHS = IfLoopArgExtractor(exp.RHS, memory)
     if LHS == RHS:
         memory = interpret(exp.body, memory)
     return memory

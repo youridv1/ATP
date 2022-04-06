@@ -103,6 +103,8 @@ def compileStel(toCompile: Expression, memory: CompMemType, data: DataSegmentTyp
                 immed = sign + str(toCompile.args[1].content)
                 return f"{func} {register}, {immed}\n", memory, data
         else:
+            register = getRegister(allRegisters, memory)
+            memory[toCompile.args[0].name] = register
             return f"mov {memory[toCompile.args[0].name]}, {memory[toCompile.args[1].name]}\n", memory, data
     else:
         register = getRegister(allRegisters, memory)
@@ -140,9 +142,9 @@ def compileIf(toCompile: If, memory: CompMemType, data: DataSegmentType) -> Tupl
 def compileWhileComparison(toCompile: Loop, memory: CompMemType) -> AsmCode:
     '''Compiles the comparison in a Loop to assembly code'''
     # load variable
-    lhsAssem = loadNameIfComponent(toCompile.Variable, memory)
+    lhsAssem = loadNameIfComponent(toCompile.LHS, memory)
     # load value
-    rhsAssem = loadNameIfComponent(toCompile.Value, memory, "r1")
+    rhsAssem = loadNameIfComponent(toCompile.RHS, memory, "r1")
     return lhsAssem + rhsAssem + "cmp r0, r1\n"
 
 # compileLoop :: Loop -> CompMemType -> DataSegmentType -> (AsmCode, CompMemType, DataSegmentType)
@@ -163,18 +165,26 @@ def compileDefinition(toCompile: Function) -> None:
     '''Starts a new compiler to compile a function definition which is put in a seperate assembly file'''
     mainCompiler(toCompile.name, toCompile.body)
 
+def loadArg(arg: Union[Variable, Value], register: Register, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
+    match arg:
+        case Value(_):
+            if '"' in arg.content:
+                argument, data = stringtoRegister(arg, data)
+            else:
+                argument = intToRegister(arg)
+        case Variable(name):
+            argument = f"mov {register}, {memory[name]}\n"
+    return argument, memory, data
+
 # compileCall :: Call -> CompMemType -> DataSegmentType -> [Register] -> (AsmCode, CompMemType, DataSegmentType)
 def compileCall(toCompile: Call, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     '''Compiles a function call by loading the parameters into temp registers, branching and moving the result into a new register'''
-    if toCompile.argc == 1:
-        match toCompile.args[0]:
-            case Value(_):
-                if '"' in toCompile.args[0].content:
-                    argument1, data = stringtoRegister(toCompile.args[0], data)
-                else:
-                    argument1 = intToRegister(toCompile.args[0])
-            case Variable(name):
-                argument1 = f"mov r0, {memory[name]}\n"
+    if toCompile.argc <= 4:
+        registers = ["r0", "r1", "r2", "r3"]
+        ArgTuples = list(zip(toCompile.args[:toCompile.argc], registers[:toCompile.argc]))
+        arguments = "".join([loadArg(*x, memory, data, allRegisters)[0] for x in ArgTuples])
+    else:
+        return  
     if toCompile.result:
         register = getRegister(allRegisters, memory)
         memory[toCompile.result] = register
@@ -182,7 +192,7 @@ def compileCall(toCompile: Call, memory: CompMemType, data: DataSegmentType, all
     else:
         resultAssembly = ""
     callAssembly = f"bl {toCompile.name}\n"
-    return f"{argument1}{callAssembly}{resultAssembly}", memory, data
+    return f"{arguments}{callAssembly}{resultAssembly}", memory, data
 
 # compileVerdeel :: Expression -> CompMemType -> AsmCode
 def compileVerdeel(toCompile: Expression, memory: CompMemType) -> AsmCode:
@@ -268,11 +278,16 @@ def mainCompiler(fileName: str, ast: ASTType = []) -> None:
     else:
         returnStatement = ""
 
-    push = "push { " + popPushRegisterString + ", lr }\n"
-    pop = "pop { " + popPushRegisterString + ", pc }\n"
+    if popPushRegisterString:
+        push = "push { " + popPushRegisterString + ", lr }\n"
+        pop = "pop { " + popPushRegisterString + ", pc }\n"
+    else:
+        push = "push { lr }\n"
+        pop = "pop { pc }\n"
+
     dataSegment = compileData(data)
     fileBegin = beginFile(dataSegment, fileName)
-    with open(f"{fileName}.S", 'w') as f:
+    with open(f"./PlatformioProject/src/{fileName}.S", 'w') as f:
         f.write(fileBegin + push + compiledCode + returnStatement + pop)
 
 

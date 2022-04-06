@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from readline import set_completer
 from lex import lex, Token
 from typing import *
 
@@ -29,14 +30,14 @@ class Expression:
 @dataclass
 class Loop:
     body: ASTType
-    Variable: Variable
-    Value: Value
+    LHS: Union[Variable, Value]
+    RHS: Union[Variable, Value]
 
 @dataclass
 class If:
     body: ASTType
-    LHS: Variable
-    RHS: Value
+    LHS: Union[Variable, Value]
+    RHS: Union[Variable, Value]
 
 @dataclass
 class Function:
@@ -166,9 +167,11 @@ def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str
     if len(tokens[-1]) < 2:
         return Loop(body, None, None), variables
     elif len(tokens[-1]) < 3 and tokens[-1][1].type == "Identifier":
-        return Loop(body, Variable(tokens[-1][1].text), 0), variables
+        return Loop(body, Variable(tokens[-1][1].text), Value(0)), variables
     elif tokens[-1][1].type == "Identifier" and tokens[-1][2].type == "Number":
         return Loop(body, Variable(tokens[-1][1].text), Value(int(tokens[-1][2].text))), variables
+    elif tokens[-1][1].type == "Identifier" and tokens[-1][2].type == "Identifier":
+        return Loop(body, Variable(tokens[-1][1].text), Variable(tokens[-1][2].text)), variables
     else:
         if len(tokens[-1]) < 3:
             raise Exception("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
@@ -200,6 +203,30 @@ def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
     else:
         raise Exception("If needs two arguments to compare")
 
+def scopeEndFind(tokens, keyWord, scopeCounter = 1):
+    if not tokens:
+        return -1
+    match keyWord:
+        case "lus":
+            endword = "sul"
+        case "indien":
+            endword = "neidni"
+
+    if tokens[0][0].text == endword:
+        scopeCounter -= 1
+    elif tokens[0][0].text == keyWord:
+        scopeCounter += 1
+
+    if not scopeCounter:
+        return 1
+    else:
+        tmp = scopeEndFind(tokens[1:], keyWord, scopeCounter)
+        if tmp == -1:
+            return -1
+        return 1 + tmp
+    
+    
+
 # parse :: [Token] -> [str] -> ASTType
 def parse(tokens: List[Token], variables: List[str] = None) -> ASTType:
     '''Main parse function
@@ -210,19 +237,25 @@ def parse(tokens: List[Token], variables: List[str] = None) -> ASTType:
     if variables == None:
         variables = []
     if tokens[0][0].text == "lus":
-        loopLocations = list(map(lambda x: True if x[0].text == "sul" else False, tokens))
-        try:
-            loopEnd = loopLocations.index(True, 1)
-        except ValueError as _:
-            raise Exception("Lus opened but not closed.")
+        # loopLocations = list(map(lambda x: True if x[0].text == "sul" else False, tokens))
+        # try:
+        #     loopEnd = loopLocations.index(True, 1)
+        # except ValueError as _:
+        #     raise Exception("Lus opened but not closed.")
+
+        loopEnd = scopeEndFind(tokens[1:], "lus")
+
         temp, variables = parseLoop(tokens[:loopEnd+1], variables)
         return [temp] + parse(tokens[loopEnd+1:], variables)
     if tokens[0][0].text == "indien":
-        endifs = list(map(lambda x: True if x[0].text == "neidni" else False, tokens))
-        try:
-            end = endifs.index(True, 1)
-        except ValueError as _:
-            raise Exception("Indien opened but not closed.")
+        # endifs = list(map(lambda x: True if x[0].text == "neidni" else False, tokens))
+        # try:
+        #     end = endifs.index(True, 1)
+        # except ValueError as _:
+        #     raise Exception("Indien opened but not closed.")
+
+        end = scopeEndFind(tokens[1:], "indien")
+
         temp, variables = parseIf(tokens[:end+1], variables)
         return [temp] + parse(tokens[end+1:], variables)
     if len(tokens) < 2:

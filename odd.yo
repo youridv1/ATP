@@ -1,18 +1,17 @@
 stel para args 0
 stel temp 1
-stel result 1
+stel result 0
 
-zeg_na "in functie oneven"
+// zeg_na "in functie oneven"
 
 indien para 0
-zeg_na "odd"
+// zeg_na "odd"
 verklein temp 1
 neidni
 
 indien temp 1
-zeg_na "in else oneven"
+// zeg_na "in else oneven"
 verklein para 1
 even temp2 para
-verklein result 1
 stapel result temp2
 neidni

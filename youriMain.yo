@@ -42,12 +42,7 @@
 
 // verdeel a 2
 
-
-stel a 4
-
 definieer even even
 definieer odd odd 
-
-even uitkomst a
-
-zeg_na uitkomst
+definieer sommig sommig
+definieer gcd gcd

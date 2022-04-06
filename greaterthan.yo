@@ -1,0 +1,11 @@
+stel a args 0
+stel b args 1
+stel result 0
+lus
+    verklein a 1
+    indien a b
+        indien result 0
+        stapel result 1
+        neidni
+    neidni
+sul a 0
