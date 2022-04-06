@@ -2,8 +2,6 @@
 
 extern "C"
 {
-  void youriMain();
-
   void serialBegin()
   {
     Serial.begin(9600);
@@ -43,6 +41,12 @@ extern "C"
   {
     return a / b;
   }
+
+  void youriMain();
+
+  bool odd(int i);
+
+  bool even(int i);
 }
 
 void setup()
@@ -50,7 +54,17 @@ void setup()
   serialBegin();       // Needed to be able to print to serial monitor
   printlnStr("Start"); // debug
   Sleep(1000);
-  youriMain();         // start the code compiled by compiler.py
+//   youriMain();         // start the code compiled by compiler.py
+  bool test = even(1400);
+  if(test)
+  {
+    Serial.println("wrong!");
+  }
+  else
+  {
+    Serial.println("right!");
+  }
+
   printlnStr("End");   // debug
 }
 

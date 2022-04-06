@@ -1,5 +1,3 @@
-from ast import AST
-from collections import namedtuple
 from dataclasses import dataclass
 from lex import lex, Token
 from typing import *
@@ -45,8 +43,11 @@ class Function:
     name: str
     body: ASTType
 
-
+# parseStel :: [Token] -> [str] -> (Expression, [str])
 def parseStel(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
+    '''Parses a stel expression
+    Takes list of known variables
+    Returns Expression and new variables'''
     if len(tokensLine) == 3:
         if tokensLine[1].type == "Identifier":
             if tokensLine[2].type == "Number":
@@ -75,7 +76,11 @@ def parseStel(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression
     else:
         raise Exception("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))
 
+# parseMathStatement :: [Token] -> [str] -> (Expression, [str])
 def parseMathStatement(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
+    '''Parses a math statement
+    Takes a list of known variables
+    Returns an expression and new variables'''
     if len(tokensLine) == 3:
         if tokensLine[1].type == "Identifier":
             if tokensLine[1].text in variables:
@@ -95,18 +100,26 @@ def parseMathStatement(tokensLine: List[Token], variables: List[str]) -> Tuple[E
     else:
         raise Exception("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
 
+# parseDefinition :: [Token] -> [str] -> (Function, [str])
 def parseDefinition(tokensLine: List[Token], variables: List[str]) -> Tuple[Function, List[str]]:
+    '''Parses a function definition
+    Takes a list of known variables
+    Returns a Function and new variables'''
     if len(tokensLine) == 3:
         if all(map(lambda x: x.type == "Identifier", tokensLine[1:])):
             tmp = list(filter(lambda x: x[-1] == '~', variables))
             return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"), tmp)), variables+[tokensLine[1].text + '~']
-            #maybe dont call lexer here #makefile
+            #maybe dont call lexer here 
         else:
             raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
     else:
         raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
 
+# parseFunctionCall :: [Token] -> [str] -> (Call, [str])
 def parseFunctionCall(tokensLine: List[Token], variables: List[str]) -> Tuple[Call, List[str]]:
+    '''Parses a Call
+    Takes a list of known variables
+    Returns a Call and new variables'''
     if all(map(lambda x: True if x.type == "String" or x.type == "Number" else (True if x.text in variables else False), tokensLine[2:])):
         if tokensLine[1].type == "Identifier" and tokensLine[1].text == "leeg":
             return Call(tokensLine[0].text, None, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables
@@ -117,11 +130,19 @@ def parseFunctionCall(tokensLine: List[Token], variables: List[str]) -> Tuple[Ca
     else:
         raise Exception("Only strings, numbers or known variable names are allowed as an Argument")
 
+# parseZegNa :: [Token] -> [str] -> (Expression, [str])
 def parseZegNa(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
+    '''Parses a zeg_na expression
+    Takes a list of known variables
+    Returns a zeg_na expression and new variables'''
     return Expression(("zeg_na"), len(tokensLine[1:]), [Variable(x.text) if x.type == "Identifier" else Value(x.text) for x in tokensLine[1:]]), variables
 
-
+# parseLine :: [Token] -> [str] -> (Expression | Call | Function, [str])
 def parseLine(tokensLine: List[Token], variables: List[str]) -> Tuple[Union[Expression, Call, Function], List[str]]:
+    '''Parses a line of code that is in the language
+    Takes a list of known variables
+    Returns a tuple of either and Expression, Call or Function and new variables
+    '''
     if tokensLine[0].type == "BuiltIn":
         if tokensLine[0].text == "zeg_na":
             return parseZegNa(tokensLine, variables)
@@ -136,8 +157,11 @@ def parseLine(tokensLine: List[Token], variables: List[str]) -> Tuple[Union[Expr
     else:
         raise Exception("First token can only be of type BuiltIn or Identifier")
                  
-
-def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str]]:  
+# parseLoop :: [Token] -> [str] -> (Loop, [str])
+def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str]]:
+    '''Parses a Loop Expression
+    Takes a list of known variables
+    Returns a tuple of a Loop and variables'''  
     body = parse(tokens[1:-1], variables)
     if len(tokens[-1]) < 2:
         return Loop(body, None, None), variables
@@ -151,7 +175,11 @@ def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str
         else:
             raise Exception("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
 
+# parseIf :: [Token] -> [str] -> (If, [str])
 def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
+    '''Parses an If Expression
+    Takes a list of known variables
+    Returns a tuple of an If and variables'''
     body = parse(tokens[1:-1], variables) 
     if len(tokens[0]) == 3:
         if tokens[0][1].type == "Identifier":
@@ -172,8 +200,11 @@ def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
     else:
         raise Exception("If needs two arguments to compare")
 
-
+# parse :: [Token] -> [str] -> ASTType
 def parse(tokens: List[Token], variables: List[str] = None) -> ASTType:
+    '''Main parse function
+    Takes a list of known variables (Used for parsing functions with parameters)
+    Returns an ASTType'''
     if not tokens:
         return []
     if variables == None:

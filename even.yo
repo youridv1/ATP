@@ -1,6 +1,6 @@
 stel para args 0
 stel temp 1
-stel result 1
+stel result 0
 
 zeg_na "in functie even"
 
@@ -13,6 +13,5 @@ indien temp 1
 zeg_na "in else even"
 verklein para 1
 odd temp2 para
-verklein result 1
 stapel result temp2
 neidni

@@ -3,6 +3,8 @@ import re
 from composite import composite_function
 from typing import *
 
+A = NewType('A', int)
+
 class Token:
     def __init__(self, type_: str, text_: str):
         self.type = type_
@@ -10,6 +12,7 @@ class Token:
     def __repr__(self):
         return "[" + self.type + ", " + self.text + "]"
 
+# genToken :: str -> Token
 def genToken(w: str) -> Token:
     """
     Gets token out of word
@@ -38,6 +41,7 @@ def genToken(w: str) -> Token:
 
 # TODO: how do you type a decorator?
 def ifNotDecorator(func):
+    '''Decorator that checks input is not empty and returns a tuple of two empty strings otherwise'''
     def inner(toLex):
         if not toLex:
             return ("","")
@@ -45,7 +49,9 @@ def ifNotDecorator(func):
     return inner
 
 @ifNotDecorator
+# lexString :: str -> (str, str)
 def lexString(toLex: str) -> Tuple[str, str]:
+    '''Lex a literal string'''
     head, *tail = toLex
     if head != '"':
         string, rest = lexString(tail)
@@ -54,7 +60,9 @@ def lexString(toLex: str) -> Tuple[str, str]:
         return (head, tail)
 
 @ifNotDecorator
+# lexToken :: str -> (str, str)
 def lexToken(toLex: str) -> Tuple[str, str]:
+    '''Lex words to be used by genToken'''
     head, *tail = toLex
     if head != " ":
         string, rest = lexToken(tail)
@@ -62,7 +70,9 @@ def lexToken(toLex: str) -> Tuple[str, str]:
     else:
         return ("", tail)
 
+# lexLine :: str -> ([Token | Str], str)
 def lexLine(toLex: str) -> Tuple[List[Union[Token, str]], str]:
+    '''Lex a line of code'''
     if not toLex:
         return ([],"")
     head, *tail = toLex
@@ -81,32 +91,49 @@ def lexLine(toLex: str) -> Tuple[List[Union[Token, str]], str]:
 
 # Didn't know how to define this one with python typing
 # But it converts from a recursive list to a regular python list
-# [A, [A, [A, []]]] -> [A]
+# Haskell typing makes no sense either because haskell only uses recursive lists
+# flatten :: [A, [A, [A, []]]] -> [A]
 def flatten(t):
+    '''Flatten a recursive list to a regular python list'''
     if not t:
         return []
     if len(t) == 1:
         return t[0]
     return [t[0]] + flatten(t[1])
 
+# removeComment :: str -> str
 def removeComment(toLex: str) -> str:
+    '''Remove comments from code before lexing'''
     return toLex.split("//", 1)[0]
 
-def myStrip(toLex: str):
+# myStrip :: str -> str
+def myStrip(toLex: str) -> str:
+    '''Strip whitespace'''
     return toLex.strip()
 
-def myHead(a: tuple):
+# myHead :: (A, A) -> A
+def myHead(a: tuple) -> A:
+    '''Returns the first item of a tuple'''
     return a[0]
 
+# genTokens :: [str] -> [Token]
 def genTokens(a: List[str]) -> List[Token]:
+    '''Loop for genToken'''
     return list(map(lambda x: genToken(x), a))
 
-def emptyLineFilter(a: list) -> List[Token]:
+# emptyLineFilter :: [Token | None] -> [Token]
+def emptyLineFilter(a: List[Token | None]) -> List[Token]:
+    '''Filters out empty lines'''
     return filter(None, a)
 
+# Composite function
+# linesToTokens = genTokens . flatten . myHead . lexLine . myStrip . removeComment
+# linesToTokens :: str -> [Token]
 linesToTokens = composite_function(genTokens, flatten, myHead, lexLine, myStrip, removeComment)
 
+# lex :: str -> [Token]
 def lex(filename: str) -> List[Token]:
+    '''Lexes a file to a list of tokens to be used by a parser'''
     with open(filename) as file: 
         lines = file.read().replace(";", "\n").split("\n")
     return list(filter(None, map(linesToTokens, lines)))

@@ -6,7 +6,7 @@ import sys
 sys.setrecursionlimit(20000) # core dumped at 21804
 
 def main():
-    b = l.lex("helloworld.yo")
+    b = l.lex("youriMain.yo")
     x = a.parse(b)
     i.interpret(x)
     
