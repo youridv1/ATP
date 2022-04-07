@@ -264,6 +264,7 @@ def mainCompiler(fileName: str, ast: ASTType = []) -> None:
     Formats the file and calls all necessary functions
     Keeps track of data segment and which registers to push and pop'''
     if not ast:
+        # only used for youriMain.yo
         ast = parse(lex(f"{fileName}.yo"))
     compiledCode, memory, data = compile(ast, {}, {})
 
