@@ -34,7 +34,7 @@ class Loop:
     RHS: Union[Variable, Value]
 
 @dataclass
-class If:
+class If: # the same as Loop, but needed for patternnmatching
     body: ASTType
     LHS: Union[Variable, Value]
     RHS: Union[Variable, Value]
@@ -234,26 +234,14 @@ def parse(tokens: List[Token], variables: List[str] = None) -> ASTType:
     Returns an ASTType'''
     if not tokens:
         return []
-    if variables == None:
+    if not variables:
         variables = []
     if tokens[0][0].text == "lus":
-        # loopLocations = list(map(lambda x: True if x[0].text == "sul" else False, tokens))
-        # try:
-        #     loopEnd = loopLocations.index(True, 1)
-        # except ValueError as _:
-        #     raise Exception("Lus opened but not closed.")
-
         loopEnd = scopeEndFind(tokens[1:], "lus")
 
         temp, variables = parseLoop(tokens[:loopEnd+1], variables)
         return [temp] + parse(tokens[loopEnd+1:], variables)
     if tokens[0][0].text == "indien":
-        # endifs = list(map(lambda x: True if x[0].text == "neidni" else False, tokens))
-        # try:
-        #     end = endifs.index(True, 1)
-        # except ValueError as _:
-        #     raise Exception("Indien opened but not closed.")
-
         end = scopeEndFind(tokens[1:], "indien")
 
         temp, variables = parseIf(tokens[:end+1], variables)

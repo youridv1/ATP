@@ -2,7 +2,7 @@ import sys
 import secrets
 from lex import lex
 from typing import *
-from interpreter import InterpretType
+from interpreter import InterpretType, functionalDictAdd
 from AST import Expression, Variable, Value, Loop, Function, Call, If, parse, ASTType
 
 sys.setrecursionlimit(20000)  # core dumped at 21804
@@ -39,9 +39,8 @@ def stringtoRegister(value: Value, data: DataSegmentType, register: Register = "
     '''Adds string to data segment and puts pointer in given register
     Returns needed assembly code and new data segment'''
     key = f"LIT{len(data)}"
-    data[key] = value.content
     assembly = f"ldr {register}, ={key}\n"
-    return assembly, data
+    return assembly, functionalDictAdd(data, {key:value.content})
 
 
 # intToRegister :: Value -> Register -> AsmCode
@@ -67,8 +66,8 @@ def ZegNaHelper(arg: Union[Value, Variable], memory: CompMemType, data: DataSegm
             return f"mov r0, {register}\nbl smartPrint\n", memory, data
         case Value(content):
             if '"' in content:
-                assembly, data = stringtoRegister(arg, data)
-                return assembly+"bl smartPrint\n", memory, data
+                assembly, newdata = stringtoRegister(arg, data)
+                return assembly+"bl smartPrint\n", memory, newdata
             assembly = intToRegister(arg)
             return assembly+"bl smartPrint\n", memory, data
 
@@ -76,40 +75,35 @@ def ZegNaHelper(arg: Union[Value, Variable], memory: CompMemType, data: DataSegm
 def compileZegNa(toCompile: Expression, memory: CompMemType, data: DataSegmentType) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     '''Compiles zeg_na Expression to assembly code
     Returns needed assembly code, new memory and new data segment'''
-    assembly, memory, data = ZegNaHelper(toCompile.args[0], memory, data)
-    assembly2 = ""
+    assembly, memory2, data2 = ZegNaHelper(toCompile.args[0], memory, data)
     if rest := toCompile.args[1:]:
-        assembly2, memory, data = compileZegNa(
-            Expression("zeg_na", len(rest), rest), memory, data)
-    return assembly+assembly2, memory, data
+        assembly2, memory3, data3 = compileZegNa(
+            Expression("zeg_na", len(rest), rest), memory2, data2)
+        return assembly+assembly2, memory3, data3
+    return assembly, memory2, data2
 
 
 # compileStel :: Expression -> CompMemType -> DataSegmentType -> [Register] -> (AsmCode, CompMemType, DataSegmentType)
 def compileStel(toCompile: Expression, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     '''Compiles stel Expression (assignment) to assembly code
     Returns needed assembly code, new memory and new data segment'''
+    register = getRegister(allRegisters, memory)
+    newmemory = functionalDictAdd(memory, {toCompile.args[0].name:register})
     if len(toCompile.args) < 3:
         if type(toCompile.args[1]) == Value:
-            register = getRegister(allRegisters, memory)
             if type(toCompile.args[1].content) == str:
-                memory[toCompile.args[0].name] = register
-                assembly, data = stringtoRegister(
+                assembly, newdata = stringtoRegister(
                     toCompile.args[1], data, register)
-                return assembly, memory, data
+                return assembly, newmemory, newdata
             else:
-                memory[toCompile.args[0].name] = register
                 func, sign = ("mov", "#") if toCompile.args[1].content < 256 else (
                     "ldr", "=")
                 immed = sign + str(toCompile.args[1].content)
-                return f"{func} {register}, {immed}\n", memory, data
+                return f"{func} {register}, {immed}\n", newmemory, data
         else:
-            register = getRegister(allRegisters, memory)
-            memory[toCompile.args[0].name] = register
-            return f"mov {memory[toCompile.args[0].name]}, {memory[toCompile.args[1].name]}\n", memory, data
+            return f"mov {newmemory[toCompile.args[0].name]}, {newmemory[toCompile.args[1].name]}\n", newmemory, data
     else:
-        register = getRegister(allRegisters, memory)
-        memory[toCompile.args[0].name] = register
-        return f"mov {register}, r{toCompile.args[2].content}\n", memory, data
+        return f"mov {register}, r{toCompile.args[2].content}\n", newmemory, data
 
 # loadNameIfComponent :: Variable | Value -> CompMemType -> Register -> AsmCode
 def loadNameIfComponent(arg: Union[Variable, Value], memory: CompMemType, register: Register="r0") -> AsmCode:
@@ -136,7 +130,7 @@ def compileIf(toCompile: If, memory: CompMemType, data: DataSegmentType) -> Tupl
     ifHex = secrets.token_hex(5)
     ifEnd = f"ifEnd_{ifHex}"
     assembly = f"{comparison}bne {ifEnd}\n{body}{ifEnd}:\n"
-    return assembly, memory, data
+    return assembly
 
 # compileWhileComparison -> Loop -> CompMemType -> AsmCode
 def compileWhileComparison(toCompile: Loop, memory: CompMemType) -> AsmCode:
@@ -158,7 +152,7 @@ def compileLoop(toCompile: Loop, memory: CompMemType, data: DataSegmentType) -> 
     whileBegin = f"whileBegin_{whileHex}"
     branch = f"beq {whileEnd}\n"
     assembly = f"{whileBegin}:\n{comparison}{branch}{body}b {whileBegin}\n{whileEnd}:\n"
-    return assembly, memory, data
+    return assembly
 
 # compileDefinition :: Function -> None
 def compileDefinition(toCompile: Function) -> None:
@@ -169,7 +163,8 @@ def loadArg(arg: Union[Variable, Value], register: Register, memory: CompMemType
     match arg:
         case Value(_):
             if '"' in arg.content:
-                argument, data = stringtoRegister(arg, data)
+                argument, newdata = stringtoRegister(arg, data)
+                return argument, memory, newdata
             else:
                 argument = intToRegister(arg)
         case Variable(name):
@@ -187,12 +182,17 @@ def compileCall(toCompile: Call, memory: CompMemType, data: DataSegmentType, all
         return  
     if toCompile.result:
         register = getRegister(allRegisters, memory)
-        memory[toCompile.result] = register
+        newmemory = functionalDictAdd(memory, {toCompile.result:register})
         resultAssembly = f"mov {register}, r0\n"
     else:
+        newmemory = {}
         resultAssembly = ""
     callAssembly = f"bl {toCompile.name}\n"
-    return f"{arguments}{callAssembly}{resultAssembly}", memory, data
+    if newmemory:
+        returnMemory = newmemory
+    else:
+        returnMemory = memory
+    return f"{arguments}{callAssembly}{resultAssembly}", returnMemory, data
 
 # compileVerdeel :: Expression -> CompMemType -> AsmCode
 def compileVerdeel(toCompile: Expression, memory: CompMemType) -> AsmCode:
@@ -211,9 +211,9 @@ def compileExpression(toCompile: InterpretType, memory: CompMemType, data: DataS
     funcToAssem = {"produceer": "mul", "stapel": "add", "verklein": "sub"}
     match toCompile:
         case If(_, _, _):
-            return compileIf(toCompile, memory, data)
+            return compileIf(toCompile, memory, data), memory, data
         case Loop(_, _, _):
-            return compileLoop(toCompile, memory, data)
+            return compileLoop(toCompile, memory, data), memory, data
         case Function(_, _):
             compileDefinition(toCompile)
             return f"@definition of {toCompile.name} was performed\n", memory, data
@@ -242,9 +242,9 @@ def compileExpression(toCompile: InterpretType, memory: CompMemType, data: DataS
 # compileDaa :: DataSegmentType -> str
 def compileData(data: DataSegmentType) -> str:
     '''Compile/Format the datasegment to be pasted into the assembly file'''
-    bruh = [f"{key}: .asciz {value}\n" for key, value in data.items()]
-    if bruh:
-        return ".data\n\n" + "".join(bruh) + "\n"
+    dataSegment = [f"{key}: .asciz {value}\n" for key, value in data.items()]
+    if dataSegment:
+        return ".data\n\n" + "".join(dataSegment) + "\n"
     return ""
 
 # compile :: ASTTYPE -> CompMemType -> DataSegmentType -> (AsmCode, CompMemType, DataSegmentType)
@@ -252,11 +252,11 @@ def compile(ast: ASTType, memory: CompMemType = {}, data: DataSegmentType = {}) 
     '''Compiles an AST to assembly code, memory and data segment'''
     if not memory:
         memory = {}
-    assembly, memory, data = compileExpression(ast[0], memory, data)
-    assembly2 = ""
+    assembly, memory2, data2 = compileExpression(ast[0], memory, data)
     if rest := ast[1:]:
-        assembly2, memory, data = compile(rest, memory, data)
-    return assembly+assembly2, memory, data
+        assembly2, memory3, data3 = compile(rest, memory2, data2)
+        return assembly+assembly2, memory3, data3
+    return assembly, memory2, data2
 
 # mainCompiler -> str -> ASTType -> None
 def mainCompiler(fileName: str, ast: ASTType = []) -> None:
@@ -266,10 +266,6 @@ def mainCompiler(fileName: str, ast: ASTType = []) -> None:
     if not ast:
         ast = parse(lex(f"{fileName}.yo"))
     compiledCode, memory, data = compile(ast, {}, {})
-    registerList = memory.values()
-    exceptedRegisters = ["r0", "r1", "r2", "r3"]
-    popPushRegisters = sorted([x for x in registerList if x not in exceptedRegisters])
-    popPushRegisterString = ", ".join(popPushRegisters)
 
     entryList = memory.keys()
     if "result" in entryList:
@@ -278,6 +274,10 @@ def mainCompiler(fileName: str, ast: ASTType = []) -> None:
     else:
         returnStatement = ""
 
+    registerList = memory.values()
+    exceptedRegisters = ["r0", "r1", "r2", "r3"]
+    popPushRegisters = sorted([x for x in registerList if x not in exceptedRegisters])
+    popPushRegisterString = ", ".join(popPushRegisters)
     if popPushRegisterString:
         push = "push { " + popPushRegisterString + ", lr }\n"
         pop = "pop { " + popPushRegisterString + ", pc }\n"

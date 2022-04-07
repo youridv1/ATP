@@ -39,8 +39,8 @@ def genToken(w: str) -> Token:
         return Token("Endif", w)
     raise Exception("Invalid Syntax: %s" % w)
 
-# TODO: how do you type a decorator?
-def ifNotDecorator(func):
+# ifNotDecorator :: (A -> A) -> (str, str)
+def ifNotDecorator(func: Callable[[A], A]) -> Tuple[str, str]:
     '''Decorator that checks input is not empty and returns a tuple of two empty strings otherwise'''
     def inner(toLex):
         if not toLex:
