@@ -134,6 +134,6 @@ linesToTokens = composite_function(genTokens, flatten, myHead, lexLine, myStrip,
 # lex :: str -> [Token]
 def lex(filename: str) -> List[Token]:
     '''Lexes a file to a list of tokens to be used by a parser'''
-    with open(filename) as file: 
+    with open(f"youriSrc/{filename}") as file: 
         lines = file.read().replace(";", "\n").split("\n")
     return list(filter(None, map(linesToTokens, lines)))
