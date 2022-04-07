@@ -1,0 +1,6 @@
+stel n args 0
+stel result 0
+lus
+stapel result n
+verklein n 1
+sul n 0
