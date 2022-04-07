@@ -28,7 +28,7 @@ waarin `args 0` de eerste functie parameter aanduidt en `args 1` de tweede etc.
 Doe dit aan het begin van iedere functie voor alle parameters
 
 De compiler support een totaal van 4 lokale variabelen per functie (inclusief de parameters zodra je ze inlaadt)  
-In de praktijk is dit geen echte limitatie, gezien je gewoon maar nieuwe functies kunt blijven maken wanneer je door je ruimte heen bent, om zo gebruik te maken van de stack als extra ruimte. Zie bijvoorbeeld bestanden "gcd.yo" en "greaterthan.yo"
+In de praktijk is dit geen echter limitatie, gezien je gewoon maar nieuwe functies kunt blijven maken wanneer je door je ruimte heen bent, om zo gebruik te maken van de stack als extra ruimte. Zie bijvoorbeeld bestanden "gcd.yo" en "greaterthan.yo"
 
 Bij de interpreter maakt het allemaal niet uit, you do you.
 
@@ -45,7 +45,19 @@ en dan ziet `mijnfunctiebestand.yo` er, bijvoorbeeld, zo uit
 ```c
 stel para args 0
 zeg_na "Hello, World!" para
+stapel para 1
+stel result para
 ```
+
+Indien er een variabele genaamd "result" aanwezig is, zal die automatisch als returnvalue worden gebruikt.
+
+Een functie aanroepen doe je met behulp van de gedefinieerde naam.
+
+`mijnfunctie resultaat 2 a "ik ben een tosti"`
+
+`resultaat` is kun je vervangen met een variabelenaam waaronder je het resultaat wilt opslaan.
+
+Mocht dit resultaat je niet interesseren, gebruik dan `leeg` als naam
 
 De interpreter support een oneindig aantal parameters, de compiler 4.
 
@@ -94,9 +106,10 @@ Wel kun je loops en if's in elkaar zetten.
 ## Draaien Interpreter, Compiler, UnitTests
 
 1. Clone dit project
-2. Installeer de PlatformIO extensie in VSCode (Optioneel, alleen doen als je wilt unittesten, of zelf geen linker hebt)
-3. `python3 main.py compile interpret clean` om te compilen, interpreten of cleanen, of alle drie, of een eigen samenstelling
-4. Druk in de sidebar in het platformio menu onder het kopje `due` op `test` om de UnitTest te starten. (PlatformioProject/test/test_main.cpp voor de source van de test)
+2. Sluit een Arduino Due aan op de pc (Alleen als je de compiler output wilt gebruiken.)
+3. Installeer de PlatformIO extensie in VSCode (Optioneel, alleen doen als je wilt unittesten, of zelf geen linker hebt)
+4. `python3 main.py compile interpret clean` om te compilen, interpreten of cleanen, of alle drie, of een eigen samenstelling
+5. Druk in de sidebar in het platformio menu onder het kopje `due` > `advanced` op `test` om de UnitTest te starten. (PlatformioProject/test/test_main.cpp voor de source van de test)
    1. Vergeet niet te compilen voor het draaien van de unittest
 
 Gecompileerde bestanden `*.S` belanden in PlatformioProject/src/
@@ -108,6 +121,8 @@ Gecompileerde bestanden `*.S` belanden in PlatformioProject/src/
 Plaats al je `.yo` bestanden in de map `youriSrc`. Begin met een bestand genaamd `youriMain.yo` Dit is waar de compiler/interpreter begint. Plaats bovenin al je definieer statements van de andere functies. `youriMain.yo` functioneert als zowel je `makefile`, als je `main.cpp` in c++ termen. Alleen bestanden die in een definieer statement voorkomen, zullen worden gecompileerd/interpreteerd.
 
 Als je de code wilt draaien zonder eigen c++ code, plaats dan een main.cpp in de src map. In de root van het project staat een uitgangspunt: `main_template.cpp`
+
+In het PlatformIO menu onder `General` > `Due` staan de build tasks. `Upload and Monitor` bouwt, upload en opent een terminal voor output vanaf de Arduino Due. Gebruik wel eerst `main.py` om de .yo te compilen.
 
 ## Eisen
 
@@ -138,8 +153,8 @@ Minstens drie toepassingen van hogere-orde functies:
 Interpreter-functionaliteit Must-have:  
 Functies: [één per file]  
 Functie-parameters kunnen meegegeven worden door:  
-Het uitvoeren van een functie call in de volgende format
-functienaam returnvalue parameter1 tm 4
+Het uitvoeren van een functie call in de volgende format  
+`functienaam returnvalue parameter1 parameter2 parameter3 parameter4`   
 returnvalue is een variabelenaam die niet eerder gebruikt is in de huidige .yo file
 
 Functies kunnen andere functies aanroepen: zie voorbeeld [odd.yo & even.yo] - [15 in beide files]  
