@@ -55,7 +55,7 @@ Een functie aanroepen doe je met behulp van de gedefinieerde naam.
 
 `mijnfunctie resultaat 2 a "ik ben een tosti"`
 
-`resultaat` is kun je vervangen met een variabelenaam waaronder je het resultaat wilt opslaan.
+`resultaat` kun je vervangen met een *ongebruikte* variabelenaam waaronder je het resultaat wilt opslaan.
 
 Mocht dit resultaat je niet interesseren, gebruik dan `leeg` als naam
 
