@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from readline import set_completer
 from lex import lex, Token
 from typing import *
+from error import error
 
 # Circular type dependency, so commented out.
 # My AST contains Functions, Calls, Ifs, Loops and Expressions, but Function and If contain an ASTType
@@ -59,11 +60,11 @@ def parseStel(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression
                     if tokensLine[2].text in variables:
                         return Expression("stel", len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables+[tokensLine[1].text]   
                     else:
-                        raise Exception("Unknown variable name: %s" % tokensLine[2].text)
+                        error("Unknown variable name: %s" % tokensLine[2].text)
             else:
-                raise Exception("Expected a Number or a String, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
+                error("Expected a Number or a String, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))
         else:
-            raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[0].type, tokensLine[0].text))
+            error("Expected an Identifier, but got an %s, %s instead." % (tokensLine[0].type, tokensLine[0].text))
     elif len(tokensLine) == 4:
         if tokensLine[2].text == "args":
             if tokensLine[3].type == "Number":
@@ -71,11 +72,11 @@ def parseStel(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression
                 # check if name is identifier
                 return Expression("stel", len(tokensLine[1:]), [Variable(tokensLine[1].text), Variable(tokensLine[2].text), Value(int(tokensLine[3].text))]), variables+[tokensLine[1].text]
             else:
-                raise Exception("Only tokens of type Number can be used as an index, got %s instead" % tokensLine[3].type)
+                error("Only tokens of type Number can be used as an index, got %s instead" % tokensLine[3].type)
         else:
-            raise Exception("Passing 3 arguments to stel is only allowed when indexing an argument list")             
+            error("Passing 3 arguments to stel is only allowed when indexing an argument list")             
     else:
-        raise Exception("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))
+        error("Stel only takes 2 or arguments. (3 when using indexes) %s were given." % len(tokensLine[1:]))
 
 # parseMathStatement :: [Token] -> [str] -> (Expression, [str])
 def parseMathStatement(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
@@ -91,15 +92,15 @@ def parseMathStatement(tokensLine: List[Token], variables: List[str]) -> Tuple[E
                     if tokensLine[2].text in variables:
                         return Expression(tokensLine[0].text, len(tokensLine[1:]),[Variable(tokensLine[1].text), Variable(tokensLine[2].text)]), variables
                     else:
-                        raise Exception("Unknown variable name: %s" % tokensLine[2].text)   
+                        error("Unknown variable name: %s" % tokensLine[2].text)   
                 else:
-                    raise Exception("Expected a Number or an Identifier, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))    
+                    error("Expected a Number or an Identifier, but got an %s, %s instead." % (tokensLine[2].type, tokensLine[2].text))    
             else:
-                raise Exception("Unknown variable name: %s" % tokensLine[1].text) 
+                error("Unknown variable name: %s" % tokensLine[1].text) 
         else:
-            raise Exception("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
+            error("Expected an Identifier, but got an %s, %s instead." % (tokensLine[1].type, tokensLine[1].text))
     else:
-        raise Exception("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
+        error("Stapel only takes 2 arguments. %s were given." % len(tokensLine[1:]))
 
 # parseDefinition :: [Token] -> [str] -> (Function, [str])
 def parseDefinition(tokensLine: List[Token], variables: List[str]) -> Tuple[Function, List[str]]:
@@ -112,9 +113,9 @@ def parseDefinition(tokensLine: List[Token], variables: List[str]) -> Tuple[Func
             return Function(tokensLine[1].text, parse(lex(tokensLine[2].text + ".yo"), tmp)), variables+[tokensLine[1].text + '~']
             #maybe dont call lexer here 
         else:
-            raise Exception("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
+            error("Definieer expects two Identifiers.Got %s instead" % list(map(lambda x: x.type, tokensLine[1:])))
     else:
-        raise Exception("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
+        error("Definieer expects two arguments, a function name and a file name. Got %s instead" % list(map(lambda x: x.text, tokensLine[1:])))
 
 # parseFunctionCall :: [Token] -> [str] -> (Call, [str])
 def parseFunctionCall(tokensLine: List[Token], variables: List[str]) -> Tuple[Call, List[str]]:
@@ -127,9 +128,9 @@ def parseFunctionCall(tokensLine: List[Token], variables: List[str]) -> Tuple[Ca
         elif tokensLine[1].type == "Identifier" and tokensLine[1].text not in variables:
             return Call(tokensLine[0].text, tokensLine[1].text, len(tokensLine[2:]), list(map(lambda x: Value(x.text) if x.type == "String" or x.type == "Number" else Variable(x.text), tokensLine[2:]))), variables+[tokensLine[1].text]
         else:
-            raise Exception("Een functie Call verwacht een ongebruikte naam voor de teruggave of 'leeg'")
+            error("Een functie Call verwacht een ongebruikte naam voor de teruggave of 'leeg'")
     else:
-        raise Exception("Only strings, numbers or known variable names are allowed as an Argument")
+        error("Only strings, numbers or known variable names are allowed as an Argument")
 
 # parseZegNa :: [Token] -> [str] -> (Expression, [str])
 def parseZegNa(tokensLine: List[Token], variables: List[str]) -> Tuple[Expression, List[str]]:
@@ -156,7 +157,7 @@ def parseLine(tokensLine: List[Token], variables: List[str]) -> Tuple[Union[Expr
     elif tokensLine[0].type == "Identifier":
         return parseFunctionCall(tokensLine, variables)
     else:
-        raise Exception("First token can only be of type BuiltIn or Identifier")
+        error("First token can only be of type BuiltIn or Identifier")
                  
 # parseLoop :: [Token] -> [str] -> (Loop, [str])
 def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str]]:
@@ -174,9 +175,9 @@ def parseLoop(tokens: List[Token], variables: List[str]) -> Tuple[Loop, List[str
         return Loop(body, Variable(tokens[-1][1].text), Variable(tokens[-1][2].text)), variables
     else:
         if len(tokens[-1]) < 3:
-            raise Exception("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
+            error("Sul expects an Identifier, got %s instead." % tokens[-1][1].type)
         else:
-            raise Exception("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
+            error("Sul expects an Identifier and a Number, got %s and %s instead." % (tokens[-1][1].type, tokens[-1][2].type))
 
 # parseIf :: [Token] -> [str] -> (If, [str])
 def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
@@ -191,17 +192,17 @@ def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
         elif tokens[0][1].type == "Number":
                 LHS = Value(tokens[0][1].text)
         else:
-            raise Exception("First type must be identifier or number")
+            error("First type must be identifier or number")
         if tokens[0][2].type == "Identifier":
             if tokens[0][2].text in variables:
                 RHS = Variable(tokens[0][2].text)
         elif tokens[0][2].type == "Number":
                 RHS = Value(tokens[0][2].text)
         else:
-            raise Exception("Second type must be identifier or number")
+            error("Second type must be identifier or number")
         return If(body, LHS, RHS), variables
     else:
-        raise Exception("If needs two arguments to compare")
+        error("If needs two arguments to compare")
 
 def scopeEndFind(tokens, keyWord, scopeCounter = 1):
     if not tokens:

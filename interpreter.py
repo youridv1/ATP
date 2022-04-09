@@ -2,6 +2,7 @@ from collections import *
 from AST import Expression, Variable, Value, Loop, Function, Call, If, ASTType
 import operator as op
 from typing import *
+from error import error
 
 MemType = Dict[str, Union[str, int, List[Union[Function, Call, If, Loop, Expression]], List[Union[str, int]]]]
 InterpretType = Union[If, Loop, Call, Function, Expression]
@@ -46,7 +47,7 @@ def interpretCall(exp: Call, memory: MemType) -> MemType:
             return functionalDictAdd(memory, {exp.result : temp[k] for k in temp.keys() if k == "result"})
         return memory
     else:
-        raise Exception("Onbekende functie. Eerst Definieren")
+        error("Onbekende functie. Eerst Definieren")
 
 # interpretStel :: Expression -> MemType -> MemType
 def interpretStel(exp: Expression, memory: MemType) -> MemType:
@@ -67,12 +68,12 @@ def interpretMath(exp: Expression, memory: MemType, op: Callable[[int, int], int
         if type(memory[exp.args[0].name]) == type(exp.args[1].content):
             return functionalDictAdd(memory, {exp.args[0].name:op(memory[exp.args[0].name], exp.args[1].content)})
         else:
-            raise Exception("Math only works with equal types, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
+            error("Math only works with equal types, not %s and %s" % (type(memory[exp.args[0].name]), type(exp.args[1].content)))
     else:
         if type(memory[exp.args[0].name]) == type(memory[exp.args[1].name]):
             return functionalDictAdd(memory, {exp.args[0].name:op(memory[exp.args[0].name], memory[exp.args[1].name])})
         else:
-            raise Exception("Math only works with equal types, not %s and %s" % (type(memory[exp.args[0].name]), type(memory[exp.args[1].name])))
+            error("Math only works with equal types, not %s and %s" % (type(memory[exp.args[0].name]), type(memory[exp.args[1].name])))
     return memory
 
 # myPrint :: Expression -> MemType -> None
@@ -101,7 +102,7 @@ def interpretExpression(exp: InterpretType, memory: MemType) -> MemType:
         case Expression("verklein", _, _):  return interpretMath(exp, memory, op.sub)
         case Expression("produceer", _, _): return interpretMath(exp, memory, op.mul)
         case Expression("verdeel", _, _):   return interpretMath(exp, memory, op.floordiv)
-        case _: raise Exception("Expected BuiltIn or Identifier, got %s" % exp.function)
+        case _: error("Expected BuiltIn or Identifier, got %s" % exp.function)
 
 # interpet :: ASTType -> MemType -> MemType
 def interpret(ast: ASTType, memory: MemType = None) -> MemType:

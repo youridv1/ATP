@@ -2,6 +2,7 @@ from functools import reduce
 import re
 from composite import composite_function
 from typing import *
+from error import error
 
 A = NewType('A', int)
 
@@ -37,7 +38,7 @@ def genToken(w: str) -> Token:
         return Token("If", w)
     if w == "neidni":
         return Token("Endif", w)
-    raise Exception("Invalid Syntax: %s" % w)
+    error("Invalid Syntax: %s" % w)
 
 # ifNotDecorator :: (A -> A) -> (str, str)
 def ifNotDecorator(func: Callable[[A], A]) -> Tuple[str, str]:
