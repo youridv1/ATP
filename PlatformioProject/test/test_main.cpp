@@ -28,16 +28,6 @@ extern "C"
         Serial.println(i);
     }
 
-    int timeS()
-    {
-        return millis() / 1000;
-    }
-
-    int timeMs()
-    {
-        return millis();
-    }
-
     int divide(int a, int b)
     {
         return a / b;
