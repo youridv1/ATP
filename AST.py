@@ -204,7 +204,9 @@ def parseIf(tokens: List[Token], variables: List[str]) -> Tuple[If, List[str]]:
     else:
         error("If needs two arguments to compare")
 
-def scopeEndFind(tokens, keyWord, scopeCounter = 1):
+# scopeEndFind :: [Token] -> str -> int -> int
+def scopeEndFind(tokens: List[Token], keyWord: str, scopeCounter: int = 1) -> int:
+    '''Returns the index of the Endif of LoopEnd of the current Loop or If'''
     if not tokens:
         return -1
     match keyWord:
