@@ -1,4 +1,3 @@
-from functools import reduce
 import re
 from composite import composite_function
 from typing import *
@@ -19,11 +18,8 @@ def genToken(w: str) -> Token:
     Gets token out of word
     """
     builtins = ["zeg_na", "stel", "stapel", "verklein", "definieer", "produceer", "verdeel"]
-    operators = ["in"]
     if w in builtins:
         return Token("BuiltIn", w)
-    if w in operators:
-        return Token("Operator", w)
     if w[0] == '"' and w[-1] == '"':
         return Token("String", w)
     if w.isnumeric():
