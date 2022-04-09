@@ -1,48 +1,29 @@
-// stel n 2
-// stel a 4
-// stel b 5
-// produceer n n 
-// produceer a b
-// verklein a n
-// stapel b n
-// produceer n 2
-// stapel n 4
-// zeg_na n
-// zeg_na "een" "twee" "drie"
-// zeg_na 4
-
-// stel n "en"
-// zeg_na n
-
-// zeg_na a
-// indien a 0
-// zeg_na "nul!"
-// neidni
-// indien a 2
-// zeg_na "twee!"
-// neidni
-
-
-stel a 4
-zeg_na a
-lus
-verklein a 1
-zeg_na "what" // en commentaar werkt ook zo
-zeg_na "what2"
-zeg_na a
-sul a 0
-
-definieer tweedeFunctie functiontwo
-definieer eersteFunctie function
-
-eersteFunctie youri "de eerste parameter is de variabele naam waar de teruggave in wordt opgeslagen"
-tweedeFunctie leeg "hallo vanuit hello world"
-
-tweedeFunctie leeg 23
-
-verdeel a 2
-
+definieer greaterthan greaterthan
 definieer even even
 definieer odd odd 
 definieer sommig sommig
 definieer gcd gcd
+
+zeg_na "interpreter demo"
+stel a 2
+zeg_na "a is" a
+
+verklein a 1
+zeg_na "verklein met 1:" 
+zeg_na a
+
+stapel a 2
+zeg_na "verhoog met 2:"
+zeg_na a
+
+produceer a 4
+zeg_na "Vermenigvuldig met 4:"
+zeg_na a
+
+verdeel a 2
+zeg_na "Gedeeld door 2"
+zeg_na a
+
+zeg_na "Call naar gcd"
+gcd deler 35 25
+zeg_na "Grootste gemeenschappelijke deler 35 en 25=" deler

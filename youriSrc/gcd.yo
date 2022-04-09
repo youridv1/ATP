@@ -2,8 +2,6 @@ stel a args 0
 stel b args 1
 stel result 0
 
-definieer greaterthan greaterthan
-
 lus
   greaterthan gt a b
   indien gt 1

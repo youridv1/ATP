@@ -32,6 +32,7 @@ def interpretIf(exp: If, memory: MemType) -> MemType:
     RHS = IfLoopArgExtractor(exp.RHS, memory)
     if LHS == RHS:
         return interpret(exp.body, memory)
+    return memory
 
 # interpretCall :: Call -> MemType -> MemType
 def interpretCall(exp: Call, memory: MemType) -> MemType:
@@ -42,7 +43,7 @@ def interpretCall(exp: Call, memory: MemType) -> MemType:
         args = {**args, **tmp}
         temp = interpret(memory[exp.name], args)
         if exp.result: 
-            return functionalDictAdd(memory, {k : temp[k] for k in temp.keys() if k == "result"})
+            return functionalDictAdd(memory, {exp.result : temp[k] for k in temp.keys() if k == "result"})
         return memory
     else:
         raise Exception("Onbekende functie. Eerst Definieren")
@@ -56,7 +57,6 @@ def interpretStel(exp: Expression, memory: MemType) -> MemType:
         else:
             return functionalDictAdd(memory, {exp.args[0].name : exp.args[1].name})
     elif exp.argc == 3:
-        memory[exp.args[0].name] = memory["args"][exp.args[2].content]
         return functionalDictAdd(memory, {exp.args[0].name:memory["args"][exp.args[2].content]})
     return memory
 

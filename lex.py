@@ -26,7 +26,7 @@ def genToken(w: str) -> Token:
     if w[0] == '"' and w[-1] == '"':
         return Token("String", w)
     if w.isnumeric():
-        return Token("Number", w)
+        return Token("Number", int(w))
     if re.fullmatch("^[a-zA-Z_][a-zA-Z_0-9]*", w) is not None:
         return Token("Identifier", w)
     if w == "lus":
