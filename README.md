@@ -105,9 +105,11 @@ Wel kun je loops en if's in elkaar zetten.
 
 ## Draaien Interpreter, Compiler, UnitTests
 
+0. Zorg voor minimaal Python 3.10.0
 1. Clone dit project
 2. Sluit een Arduino Due aan op de pc (Alleen als je de compiler output wilt gebruiken.)
 3. Installeer de PlatformIO extensie in VSCode (Optioneel, alleen doen als je wilt unittesten, of zelf geen linker hebt)
+   1. PlatformIO installeert automatisch alles zodra het een DUE ziet. Daarna VSCode even herstarten.
 4. `python3 main.py compile interpret clean` om te compilen, interpreten of cleanen, of alle drie, of een eigen samenstelling
 5. Druk in de sidebar in het platformio menu onder het kopje `due` > `advanced` op `test` om de UnitTest te starten. (PlatformioProject/test/test_main.cpp voor de source van de test)
    1. Vergeet niet te compilen voor het draaien van de unittest
