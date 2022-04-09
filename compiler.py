@@ -162,7 +162,7 @@ def compileDefinition(toCompile: Function) -> None:
 def loadArg(arg: Union[Variable, Value], register: Register, memory: CompMemType, data: DataSegmentType, allRegisters: List[Register]) -> Tuple[AsmCode, CompMemType, DataSegmentType]:
     match arg:
         case Value(_):
-            if '"' in arg.content:
+            if type(arg.content) == int:
                 argument, newdata = stringtoRegister(arg, data)
                 return argument, memory, newdata
             else:
@@ -201,7 +201,8 @@ def compileVerdeel(toCompile: Expression, memory: CompMemType) -> AsmCode:
     lhsAssem = loadNameIfComponent(toCompile.args[0], memory)
     # load rhs
     rhsAssem = loadNameIfComponent(toCompile.args[1], memory, "r1")
-    return lhsAssem + rhsAssem + "bl divide\n"
+    lhsOverWriteAssem = f"mov {memory[toCompile.args[0].name]}, r0\n"
+    return lhsAssem + rhsAssem + "bl divide\n" + lhsOverWriteAssem
     
 
 # compileExpression :: InterpretType -> CompMemType -> DataSegmentType -> (AsmCode, CompMemType, DataSegmentType)

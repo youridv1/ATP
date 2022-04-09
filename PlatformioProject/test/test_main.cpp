@@ -46,12 +46,13 @@ extern "C"
     void youriMain();
 
     bool odd(int i);
-
     bool even(int i);
-
     int sommig(int i);
-
     int gcd(int a, int b);
+    int add(int a, int b);
+    int division(int a, int b);
+    int subtract(int a, int b);
+    int multiply(int a, int b);
 }
 
 unsigned int sommigReference(unsigned int n) // copied from the reader to use as reference
@@ -112,11 +113,59 @@ void testGcd()
     // negative numbers would go here, but I don't support those
 }
 
+void testAdd()
+{
+    TEST_ASSERT_EQUAL(10, add(5, 5)); // equal
+    TEST_ASSERT_EQUAL(5, add(5, 0));  // rhs zero 
+    TEST_ASSERT_EQUAL(5, add(0, 5));  // lhs zero
+    TEST_ASSERT_EQUAL(0, add(0, 0));  // both zero
+    TEST_ASSERT_EQUAL(6, add(1, 5));  // a < b
+    TEST_ASSERT_EQUAL(6, add(5, 1));  // a > b
+}
+
+void testSubtract()
+{
+    TEST_ASSERT_EQUAL(0, subtract(5, 5)); // equal
+    TEST_ASSERT_EQUAL(5, subtract(5, 0));  // rhs zero 
+    TEST_ASSERT_EQUAL(-5, subtract(0, 5));  // lhs zero
+    TEST_ASSERT_EQUAL(0, subtract(0, 0));  // both zero
+    TEST_ASSERT_EQUAL(-4, subtract(1, 5));  // a < b
+    TEST_ASSERT_EQUAL(4, subtract(5, 1));  // a > b
+}
+
+void testDivide()
+{
+    TEST_ASSERT_EQUAL(1, division(5, 5)); // equal
+    // rhs zero would be here, but that's not possible 
+    TEST_ASSERT_EQUAL(0, division(0, 5));  // lhs zero
+    // both zero would be here, but that's not possible
+    TEST_ASSERT_EQUAL(0, division(1, 5));  // a < b
+    TEST_ASSERT_EQUAL(5, division(5, 1));  // a > b
+}
+
+void testMultiply()
+{
+    TEST_ASSERT_EQUAL(25, multiply(5, 5)); // equal
+    TEST_ASSERT_EQUAL(0, multiply(5, 0));  // rhs zero 
+    TEST_ASSERT_EQUAL(0, multiply(0, 5));  // lhs zero
+    TEST_ASSERT_EQUAL(0, multiply(0, 0));  // both zero
+    TEST_ASSERT_EQUAL(5, multiply(1, 5));  // a < b
+    TEST_ASSERT_EQUAL(5, multiply(5, 1));  // a > b
+}
+
 void setup()
 {
     serialBegin();       // Needed to be able to print to serial monitor
     Sleep(1000);
     UNITY_BEGIN();
+
+    // testing basic operators
+    RUN_TEST(testAdd);
+    RUN_TEST(testSubtract);
+    RUN_TEST(testMultiply);
+    RUN_TEST(testDivide);
+
+    // testing examples, functioncalls
     RUN_TEST(testOdd);
     RUN_TEST(testEven);
     RUN_TEST(testSommig);

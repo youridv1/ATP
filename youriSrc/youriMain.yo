@@ -3,6 +3,10 @@ definieer even even
 definieer odd odd 
 definieer sommig sommig
 definieer gcd gcd
+definieer add optellen
+definieer subtract aftrekken
+definieer division delen
+definieer multiply vermenigvuldigen
 
 zeg_na "interpreter demo"
 stel a 2
